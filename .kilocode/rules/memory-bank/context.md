@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Project Status**: ✅ Solar Energy Dashboard completo
+**Project Status**: ✅ Solar Energy Dashboard completo com parser de e-mail japonês
 
 O aplicativo está pronto para uso com dados de demonstração. Para conectar ao Gmail real, é necessário configurar as variáveis de ambiente OAuth2.
 
@@ -24,6 +24,7 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 - [x] Time period selector (daily, weekly, monthly, yearly)
 - [x] Dashboard accessible without login (demo data by default)
 - [x] Optional Gmail login button in header
+- [x] Japanese email parser for kp-net@kp-net.com emails
 
 ## Current Structure
 
@@ -83,6 +84,7 @@ Abra http://localhost:3000 e clique em "Conectar com Google"
 | 2026-03-06 | Solar Energy Dashboard implementation |
 | 2026-03-06 | Added dark/light mode, chart type selector, time period selector |
 | 2026-03-06 | Dashboard accessible without login, added optional Gmail login button |
+| 2026-03-06 | Japanese email parser for kp-net@kp-net.com (消費電力量, 買電電力量, 売電電力量, 全体の発電電力量) |
 
 ## Dependencies Added
 

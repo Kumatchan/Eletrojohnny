@@ -9,6 +9,19 @@ import { EnergyData, DailySummary, MonthlySummary, DashboardStats } from './type
  * - "Energia comprada: 10.5 kWh"
  * - "Energia vendida: 5.3 kWh"
  * - "Produção: 20.1 kWh"
+ * 
+ * Formato japonês (kp-net@kp-net.com):
+ * □ 消費電力量
+ * 15.4 kWh
+ * 
+ * □ 買電電力量
+ * 10.5 kWh
+ * 
+ * □ 売電電力量
+ * 14.2 kWh
+ * 
+ * □ 全体の発電電力量
+ * 19.7 kWh
  */
 
 interface ParsedEmailData {
@@ -36,6 +49,85 @@ const patterns = {
   // Energia produzida pelos painéis solares
   produced: /(?:produção|produzido|gerado)[:\s]*(\d+[.,]?\d*)\s*kWh?/i,
 };
+
+// Padrões regex para formato japonês (kp-net@kp-net.com)
+const japanesePatterns = {
+  // Data formats: 2026/03/07, 2026-03-07, 2026年03月07日
+  date: /(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})日?/,
+  
+  // 消費電力量 (Energy Consumption)
+  consumption: /□\s*消費電力量\s*[\r\n]+\s*(\d+[.,]?\d*)\s*kWh/i,
+  
+  // 買電電力量 (Purchased Electricity)
+  purchased: /□\s*買電電力量\s*[\r\n]+\s*(\d+[.,]?\d*)\s*kWh/i,
+  
+  // 売電電力量 (Sold Electricity)
+  sold: /□\s*売電電力量\s*[\r\n]+\s*(\d+[.,]?\d*)\s*kWh/i,
+  
+  // 全体の発電電力量 (Total Power Generation)
+  generation: /□\s*全体の発電電力量\s*[\r\n]+\s*(\d+[.,]?\d*)\s*kWh/i,
+};
+
+/**
+ * Parseia e-mail no formato japonês (kp-net@kp-net.com)
+ * 
+ * Formato esperado:
+ * □ 消費電力量
+ * 15.4 kWh
+ * 
+ * □ 買電電力量
+ * 10.5 kWh
+ * 
+ * □ 売電電力量
+ * 14.2 kWh
+ * 
+ * □ 全体の発電電力量
+ * 19.7 kWh
+ */
+export function parseJapaneseEnergyEmail(body: string): ParsedEmailData {
+  const result: ParsedEmailData = {
+    date: '',
+    consumed: null,      // 消費電力量 (Energy Consumption)
+    imported: null,      // 買電電力量 (Purchased Electricity) - bought from grid
+    exported: null,      // 売電電力量 (Sold Electricity) - sold to grid
+    produced: null,     // 全体の発電電力量 (Total Power Generation)
+  };
+
+  // Extract date - handles formats like 2026/03/07, 2026-03-07, 2026年03月07日
+  const dateMatch = body.match(japanesePatterns.date);
+  if (dateMatch) {
+    const year = parseInt(dateMatch[1]);
+    const month = parseInt(dateMatch[2]);
+    const day = parseInt(dateMatch[3]);
+    result.date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  // Extract 消費電力量 (Energy Consumption)
+  const consumptionMatch = body.match(japanesePatterns.consumption);
+  if (consumptionMatch) {
+    result.consumed = parseFloat(consumptionMatch[1].replace(',', '.'));
+  }
+
+  // Extract 買電電力量 (Purchased Electricity)
+  const purchasedMatch = body.match(japanesePatterns.purchased);
+  if (purchasedMatch) {
+    result.imported = parseFloat(purchasedMatch[1].replace(',', '.'));
+  }
+
+  // Extract 売電電力量 (Sold Electricity)
+  const soldMatch = body.match(japanesePatterns.sold);
+  if (soldMatch) {
+    result.exported = parseFloat(soldMatch[1].replace(',', '.'));
+  }
+
+  // Extract 全体の発電電力量 (Total Power Generation)
+  const generationMatch = body.match(japanesePatterns.generation);
+  if (generationMatch) {
+    result.produced = parseFloat(generationMatch[1].replace(',', '.'));
+  }
+
+  return result;
+}
 
 /**
  * Parseia o corpo do e-mail e extrai os dados de energia
