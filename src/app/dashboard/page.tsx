@@ -240,21 +240,16 @@ function DashboardContent() {
             {/* Controls */}
             <div className="flex items-center gap-3">
               {/* Time Period Selector */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
-                {(['daily', 'weekly', 'monthly', 'yearly'] as TimePeriod[]).map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setTimePeriod(period)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      timePeriod === period
-                        ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white'
-                    }`}
-                  >
-                    {period === 'daily' ? 'Dia' : period === 'weekly' ? 'Sem' : period === 'monthly' ? 'Mês' : 'Ano'}
-                  </button>
-                ))}
-              </div>
+              <select
+                value={timePeriod}
+                onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white border-0 cursor-pointer focus:ring-2 focus:ring-yellow-400"
+              >
+                <option value="daily">Dia</option>
+                <option value="weekly">Semana</option>
+                <option value="monthly">Mês</option>
+                <option value="yearly">Ano</option>
+              </select>
 
               {/* Theme Toggle */}
               <button
