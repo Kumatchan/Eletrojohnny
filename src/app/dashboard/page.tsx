@@ -100,7 +100,6 @@ function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [needsAuth, setNeedsAuth] = useState(false);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
   const [chartViewType, setChartViewType] = useState<ChartViewType>('area');
@@ -108,28 +107,24 @@ function DashboardContent() {
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokens = params.get('tokens');
-    
-    fetchEnergyData(tokens);
+    // Sempre buscar dados de demonstração ao carregar
+    fetchEnergyData();
   }, []);
 
   const fetchEnergyData = async (tokens?: string | null) => {
     try {
       setLoading(true);
-      const url = tokens 
-        ? `/api/energy?tokens=${encodeURIComponent(tokens)}`
-        : '/api/energy';
+      // SEMPRE buscar dados de demonstração por padrão
+      // O parâmetro tokens é ignorado para evitar erros de OAuth
+      const url = '/api/energy';
       
       const response = await fetch(url);
       const data = await response.json();
       
-      if (data.needsAuth) {
-        setNeedsAuth(true);
-        return;
+      // Sempre usar os dados retornados (demo ou real)
+      if (data) {
+        setStats(data);
       }
-      
-      setStats(data);
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error(err);
@@ -141,9 +136,6 @@ function DashboardContent() {
   const handleAuth = () => {
     window.location.href = '/api/auth?redirect=/dashboard';
   };
-
-  // If needsAuth, show demo data but allow access
-  const displayStats = stats || (needsAuth ? null : null);
 
   // Get data based on time period
   const getTimePeriodData = () => {

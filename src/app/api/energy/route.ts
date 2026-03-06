@@ -1,72 +1,13 @@
 import { NextResponse } from 'next/server';
-import { parseEnergyEmail, processEnergyData, createDashboardStats } from '@/lib/energy-parser';
-import { getEmails, extractEmailBody, createAuthenticatedClient, isOAuthConfigured } from '@/lib/google-auth';
-import { EnergyData, DashboardStats } from '@/lib/types';
+import { DashboardStats } from '@/lib/types';
 
 // Endpoint para buscar dados de energia
+// SEMPRE retorna dados de demonstração para evitar erros de OAuth
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const refresh = searchParams.get('refresh') === 'true';
-    
-    // Verifica se o OAuth está configurado
-    // Se não estiver, retorna dados de demonstração
-    if (!isOAuthConfigured()) {
-      // Retorna dados de demonstração se OAuth não estiver configurado
-      return NextResponse.json(getDemoData());
-    }
-    
-    // Verifica se o OAuth está configurado
-    // Se não estiver, retorna dados de demonstração
-    if (!isOAuthConfigured()) {
-      return NextResponse.json(getDemoData());
-    }
-    
-    // Em produção, os tokens seriam armazenados de forma segura
-    // Por enquanto, vamos verificar se temos tokens na sessão/cookie
-    const tokensParam = searchParams.get('tokens');
-    
-    // Se não há tokens, retorna dados de demonstração
-    if (!tokensParam) {
-      return NextResponse.json(getDemoData());
-    }
-    
-    let tokens;
-    try {
-      tokens = JSON.parse(Buffer.from(tokensParam, 'base64').toString());
-    } catch {
-      return NextResponse.json({
-        needsAuth: true,
-        message: 'Tokens inválidos',
-      }, { status: 401 });
-    }
-    
-    // Cria cliente autenticado
-    const auth = createAuthenticatedClient(tokens);
-    
-    // Busca e-mails da empresa de energia
-    // Ajuste a query conforme o formato dos e-mails da sua empresa
-    const emails = await getEmails(
-      auth, 
-      'subject:(energia OR consumo OR painel solar OR fotovoltaico) OR from:(energia OR electricidade)',
-      30
-    );
-    
-    // Processa os e-mails
-    const rawData = [];
-    for (const email of emails) {
-      const body = extractEmailBody(email.payload);
-      const parsed = parseEnergyEmail(body);
-      if (parsed.date) {
-        rawData.push(parsed);
-      }
-    }
-    
-    // Processa dados
-    const energyData = processEnergyData(rawData);
-    const stats = createDashboardStats(energyData);
-    
-    return NextResponse.json(stats);
+    // Sempre retorna dados de demonstração
+    // O OAuth foi desabilitado para evitar erros de app não verificado
+    return NextResponse.json(getDemoData());
     
   } catch (error) {
     console.error('Erro ao buscar dados de energia:', error);
