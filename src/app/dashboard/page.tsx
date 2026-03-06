@@ -175,8 +175,8 @@ function DashboardContent() {
     const labels = {
       produced: 'Produção',
       consumed: 'Consumo',
-      exported: 'Exportação',
-      imported: 'Importação',
+      exported: 'Vendido',
+      imported: 'Comprado',
       all: 'Todos',
     };
     return labels[type];
