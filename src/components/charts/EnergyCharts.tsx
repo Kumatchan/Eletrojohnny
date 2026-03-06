@@ -179,9 +179,9 @@ export function SingleAreaChart({
 }
 
 /**
- * Gráfico de barras para comparação diária
+ * Gráfico de barras para evolução da energia (produção vs consumo)
  */
-export function EnergyBarChart({ data, sliceCount }: { data: DailySummary[]; sliceCount?: number }) {
+export function EvolutionBarChart({ data, sliceCount, barSize }: { data: DailySummary[]; sliceCount?: number; barSize?: number }) {
   const chartData = (sliceCount ? data.slice(-sliceCount) : data).map(d => ({
     ...d,
     date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -215,8 +215,57 @@ export function EnergyBarChart({ data, sliceCount }: { data: DailySummary[]; sli
             }}
             formatter={(value: number) => [`${value.toFixed(2)} kWh`]}
           />
-          <Bar dataKey="imported" name="Comprada" fill={COLORS.imported} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="exported" name="Vendida" fill={COLORS.exported} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="produced" name="Produzida" fill={COLORS.produced} radius={[4, 4, 0, 0]} barSize={barSize} />
+          <Bar dataKey="consumed" name="Consumida" fill={COLORS.consumed} radius={[4, 4, 0, 0]} barSize={barSize} />
+          <Legend 
+            wrapperStyle={{ paddingTop: '20px' }}
+            formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * Gráfico de barras para comparação diária
+ */
+export function EnergyBarChart({ data, sliceCount, barSize }: { data: DailySummary[]; sliceCount?: number; barSize?: number }) {
+  const chartData = (sliceCount ? data.slice(-sliceCount) : data).map(d => ({
+    ...d,
+    date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+  }));
+
+  return (
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} className="dark:stroke-slate-700" />
+          <XAxis 
+            dataKey="date"
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <YAxis 
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: 'none',
+              borderRadius: '12px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+            formatter={(value: number) => [`${value.toFixed(2)} kWh`]}
+          />
+          <Bar dataKey="imported" name="Comprada" fill={COLORS.imported} radius={[4, 4, 0, 0]} barSize={barSize} />
+          <Bar dataKey="exported" name="Vendida" fill={COLORS.exported} radius={[4, 4, 0, 0]} barSize={barSize} />
           <Legend 
             wrapperStyle={{ paddingTop: '20px' }}
             formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
@@ -234,12 +283,14 @@ export function SingleBarChart({
   data, 
   dataKey,
   color,
-  sliceCount 
+  sliceCount,
+  barSize
 }: { 
   data: DailySummary[] | MonthlySummary[]; 
   dataKey: string;
   color: string;
   sliceCount?: number;
+  barSize?: number;
 }) {
   const isDaily = 'date' in (data[0] || {});
   
@@ -283,7 +334,7 @@ export function SingleBarChart({
             }}
             formatter={(value: number) => [`${value.toFixed(2)} kWh`]}
           />
-          <Bar dataKey={dataKey} name={dataKeyLabel} fill={color} radius={[4, 4, 0, 0]} />
+          <Bar dataKey={dataKey} name={dataKeyLabel} fill={color} radius={[4, 4, 0, 0]} barSize={barSize} />
         </BarChart>
       </ResponsiveContainer>
     </div>

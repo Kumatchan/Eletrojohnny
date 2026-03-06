@@ -9,7 +9,8 @@ import {
   DistributionPieChart, 
   MonthlyBarChart,
   SingleAreaChart,
-  SingleBarChart
+  SingleBarChart,
+  EvolutionBarChart
 } from '@/components/charts/EnergyCharts';
 
 // Theme Context
@@ -92,6 +93,9 @@ type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 // Chart Data Type
 type ChartDataType = 'produced' | 'consumed' | 'exported' | 'imported' | 'all';
 
+// Chart View Type
+type ChartViewType = 'area' | 'bar';
+
 function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,6 +103,7 @@ function DashboardContent() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
+  const [chartViewType, setChartViewType] = useState<ChartViewType>('area');
 
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
@@ -294,6 +299,34 @@ function DashboardContent() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 <ChartIcon />
+                Tipo:
+              </span>
+              <button
+                onClick={() => setChartViewType('area')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  chartViewType === 'area'
+                    ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                }`}
+              >
+                Área
+              </button>
+              <button
+                onClick={() => setChartViewType('bar')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  chartViewType === 'bar'
+                    ? 'bg-slate-800 dark:bg-white text-white dark:text-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                }`}
+              >
+                Barras
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                <ChartIcon />
                 Visualizar:
               </span>
               {(['all', 'produced', 'consumed', 'exported', 'imported'] as ChartDataType[]).map((type) => (
@@ -369,17 +402,34 @@ function DashboardContent() {
                 : 'Evolução Anual (12 meses)'}
             </h2>
             
-            {selectedChartType === 'all' ? (
-              <EnergyAreaChart data={timePeriodData[timePeriod] as any} />
+            {chartViewType === 'bar' ? (
+              selectedChartType === 'all' ? (
+                <EvolutionBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} barSize={timePeriod === 'daily' ? 25 : undefined} />
+              ) : (
+                <SingleBarChart 
+                  data={timePeriodData[timePeriod] as any} 
+                  dataKey={selectedChartType}
+                  color={selectedChartType === 'produced' ? '#10B981' 
+                    : selectedChartType === 'consumed' ? '#3B82F6' 
+                    : selectedChartType === 'exported' ? '#F59E0B' 
+                    : '#EF4444'}
+                  sliceCount={getSliceCount(timePeriod)}
+                  barSize={timePeriod === 'daily' ? 40 : undefined}
+                />
+              )
             ) : (
-              <SingleAreaChart 
-                data={timePeriodData[timePeriod] as any} 
-                dataKey={selectedChartType}
-                color={selectedChartType === 'produced' ? '#10B981' 
-                  : selectedChartType === 'consumed' ? '#3B82F6' 
-                  : selectedChartType === 'exported' ? '#F59E0B' 
-                  : '#EF4444'}
-              />
+              selectedChartType === 'all' ? (
+                <EnergyAreaChart data={timePeriodData[timePeriod] as any} />
+              ) : (
+                <SingleAreaChart 
+                  data={timePeriodData[timePeriod] as any} 
+                  dataKey={selectedChartType}
+                  color={selectedChartType === 'produced' ? '#10B981' 
+                    : selectedChartType === 'consumed' ? '#3B82F6' 
+                    : selectedChartType === 'exported' ? '#F59E0B' 
+                    : '#EF4444'}
+                />
+              )
             )}
           </div>
 
@@ -393,7 +443,7 @@ function DashboardContent() {
             </h2>
             
             {selectedChartType === 'all' ? (
-              <EnergyBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} />
+              <EnergyBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} barSize={timePeriod === 'daily' ? 40 : undefined} />
             ) : (
               <SingleBarChart 
                 data={timePeriodData[timePeriod] as any} 
@@ -403,6 +453,7 @@ function DashboardContent() {
                   : selectedChartType === 'exported' ? '#F59E0B' 
                   : '#EF4444'}
                 sliceCount={getSliceCount(timePeriod)}
+                barSize={timePeriod === 'daily' ? 40 : undefined}
               />
             )}
           </div>
