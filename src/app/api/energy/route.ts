@@ -101,78 +101,57 @@ function getDemoData(): DashboardStats {
     });
   }
   
-  // Gera dados mensais
-  const monthlyData = [
-    {
-      month: '2025-10',
-      totalConsumed: 320,
-      totalImported: 85,
-      totalExported: 180,
-      totalProduced: 450,
-      totalSavings: 12.50,
-      days: 31,
-    },
-    {
-      month: '2025-11',
-      totalConsumed: 290,
-      totalImported: 120,
-      totalExported: 150,
-      totalProduced: 380,
-      totalSavings: -7.50,
-      days: 30,
-    },
-    {
-      month: '2025-12',
-      totalConsumed: 350,
-      totalImported: 180,
-      totalExported: 100,
-      totalProduced: 320,
-      totalSavings: -22.00,
-      days: 31,
-    },
-    {
-      month: '2026-01',
-      totalConsumed: 310,
-      totalImported: 140,
-      totalExported: 130,
-      totalProduced: 340,
-      totalSavings: -10.50,
-      days: 31,
-    },
-    {
-      month: '2026-02',
-      totalConsumed: 280,
-      totalImported: 100,
-      totalExported: 160,
-      totalProduced: 390,
-      totalSavings: 2.00,
-      days: 28,
-    },
-  ];
+  // Gera dados mensais (últimos 12 meses)
+  const monthlyData = [];
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthStr = date.toISOString().split('T')[0].substring(0, 7);
+    
+    // Simula dados realistas com sazonalidade (mais produção no verão)
+    const month = date.getMonth();
+    const seasonalFactor = month >= 4 && month <= 9 ? 1.3 : 0.7; // Mais sol de maio a setembro
+    
+    const totalProduced = Math.round((350 + Math.random() * 200) * seasonalFactor);
+    const totalConsumed = Math.round(280 + Math.random() * 100);
+    const totalExported = Math.round(Math.max(0, totalProduced - totalConsumed * 0.6));
+    const totalImported = Math.round(Math.max(0, totalConsumed - (totalProduced - totalExported)));
+    const totalSavings = Math.round((totalExported * 0.15 - totalImported * 0.25) * 100) / 100;
+    
+    monthlyData.push({
+      month: monthStr,
+      totalConsumed,
+      totalImported,
+      totalExported,
+      totalProduced,
+      totalSavings,
+      days: new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate(),
+    });
+  }
   
   const todayData = last30Days[last30Days.length - 1];
   
-  // Gera dados anuais (por ano)
-  const yearlyData = [
-    {
-      month: '2024-01',
-      totalConsumed: 3500,
-      totalImported: 1200,
-      totalExported: 1800,
-      totalProduced: 4200,
-      totalSavings: 45.00,
+  // Gera dados anuais (últimos 5 anos)
+  const yearlyData = [];
+  for (let i = 4; i >= 0; i--) {
+    const year = today.getFullYear() - i;
+    const seasonalFactor = year >= 2024 ? 1.2 : 1.0; // Mais produção em sistemas mais novos
+    
+    const totalProduced = Math.round((4000 + Math.random() * 1500) * seasonalFactor);
+    const totalConsumed = Math.round(3200 + Math.random() * 800);
+    const totalExported = Math.round(Math.max(0, totalProduced - totalConsumed * 0.6));
+    const totalImported = Math.round(Math.max(0, totalConsumed - (totalProduced - totalExported)));
+    const totalSavings = Math.round((totalExported * 0.15 - totalImported * 0.25) * 100) / 100;
+    
+    yearlyData.push({
+      month: `${year}-01`,
+      totalConsumed,
+      totalImported,
+      totalExported,
+      totalProduced,
+      totalSavings,
       days: 365,
-    },
-    {
-      month: '2025-01',
-      totalConsumed: 3800,
-      totalImported: 1400,
-      totalExported: 2100,
-      totalProduced: 4800,
-      totalSavings: 62.50,
-      days: 365,
-    },
-  ];
+    });
+  }
   
   return {
     today: {

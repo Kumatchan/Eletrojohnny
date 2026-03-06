@@ -101,7 +101,7 @@ function DashboardContent() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
 
-  const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) || { theme, toggleTheme: () => {} };
+  const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
