@@ -19,6 +19,9 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 - [x] Energy data parser for email extraction
 - [x] Dashboard with charts (Recharts)
 - [x] Demo data when OAuth not configured
+- [x] Dark/Light mode toggle
+- [x] Chart type selector (produced, consumed, exported, imported, all)
+- [x] Time period selector (daily, weekly, monthly, yearly)
 
 ## Current Structure
 
@@ -35,7 +38,13 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 
 ## Current Focus
 
-Dashboard operacional com dados de demonstração. Próximos passos:
+Dashboard operacional com dados de demonstração e novas funcionalidades:
+
+1. Botão para alternar entre tema claro e escuro
+2. Seletor de tipo de gráfico (Produção, Consumo, Exportação, Importação, Todos)
+3. Seletor de período (Diário, Semanal, Mensal, Anual)
+
+Próximos passos:
 
 1. Configurar OAuth2 no Google Cloud Console
 2. Preencher variáveis de ambiente
@@ -71,6 +80,7 @@ Abra http://localhost:3000 e clique em "Conectar com Google"
 |------|---------|
 | Initial | Template created with base setup |
 | 2026-03-06 | Solar Energy Dashboard implementation |
+| 2026-03-06 | Added dark/light mode, chart type selector, time period selector |
 
 ## Dependencies Added
 
