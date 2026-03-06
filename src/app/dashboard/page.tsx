@@ -100,6 +100,7 @@ function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
   const [chartViewType, setChartViewType] = useState<ChartViewType>('area');
@@ -107,24 +108,28 @@ function DashboardContent() {
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
   useEffect(() => {
-    // Sempre buscar dados de demonstração ao carregar
-    fetchEnergyData();
+    const params = new URLSearchParams(window.location.search);
+    const tokens = params.get('tokens');
+    
+    fetchEnergyData(tokens);
   }, []);
 
   const fetchEnergyData = async (tokens?: string | null) => {
     try {
       setLoading(true);
-      // SEMPRE buscar dados de demonstração por padrão
-      // O parâmetro tokens é ignorado para evitar erros de OAuth
-      const url = '/api/energy';
+      const url = tokens 
+        ? `/api/energy?tokens=${encodeURIComponent(tokens)}`
+        : '/api/energy';
       
       const response = await fetch(url);
       const data = await response.json();
       
-      // Sempre usar os dados retornados (demo ou real)
-      if (data) {
-        setStats(data);
+      if (data.needsAuth) {
+        setNeedsAuth(true);
+        return;
       }
+      
+      setStats(data);
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error(err);
