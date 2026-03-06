@@ -1,10 +1,10 @@
-# Active Context: Next.js Starter Template
+# Active Context: Solar Energy Dashboard
 
 ## Current State
 
-**Template Status**: ✅ Ready for development
+**Project Status**: ✅ Solar Energy Dashboard completo
 
-The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. It's ready for AI-assisted expansion to build any type of application.
+O aplicativo está pronto para uso com dados de demonstração. Para conectar ao Gmail real, é necessário configurar as variáveis de ambiente OAuth2.
 
 ## Recently Completed
 
@@ -14,74 +14,66 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] ESLint configuration
 - [x] Memory bank documentation
 - [x] Recipe system for common features
+- [x] Solar Energy Dashboard implementation
+- [x] Gmail API integration (OAuth2)
+- [x] Energy data parser for email extraction
+- [x] Dashboard with charts (Recharts)
+- [x] Demo data when OAuth not configured
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home page | ✅ Ready |
-| `src/app/layout.tsx` | Root layout | ✅ Ready |
-| `src/app/globals.css` | Global styles | ✅ Ready |
-| `.kilocode/` | AI context & recipes | ✅ Ready |
+| `src/app/dashboard/page.tsx` | Main dashboard page | ✅ Ready |
+| `src/app/api/energy/route.ts` | Energy data API | ✅ Ready |
+| `src/app/api/auth/route.ts` | OAuth authentication | ✅ Ready |
+| `src/lib/energy-parser.ts` | Email data parser | ✅ Ready |
+| `src/lib/google-auth.ts` | Gmail API utilities | ✅ Ready |
+| `src/components/ui/StatCard.tsx` | Statistics cards | ✅ Ready |
+| `src/components/charts/EnergyCharts.tsx` | Chart components | ✅ Ready |
+| `.env.example` | Environment variables template | ✅ Ready |
 
 ## Current Focus
 
-The template is ready. Next steps depend on user requirements:
+Dashboard operacional com dados de demonstração. Próximos passos:
 
-1. What type of application to build
-2. What features are needed
-3. Design/branding preferences
+1. Configurar OAuth2 no Google Cloud Console
+2. Preencher variáveis de ambiente
+3. Conectar conta Gmail
 
-## Quick Start Guide
+## Como Usar
 
-### To add a new page:
+### 1. Configurar OAuth2 do Google:
 
-Create a file at `src/app/[route]/page.tsx`:
-```tsx
-export default function NewPage() {
-  return <div>New page content</div>;
-}
+1. Acesse https://console.cloud.google.com/
+2. Crie um novo projeto
+3. Vá em "APIs e Serviços" > "Biblioteca"
+4. Procure e habilite "Gmail API"
+5. Vá em "Tela de consentimento OAuth"
+6. Configure como "Externo"
+7. Adicione escopos: `.../auth/gmail.readonly`, `.../auth/gmail.modify`
+8. Crie credenciais OAuth2 (Client ID e Client Secret)
+9. Copie `.env.example` para `.env.local` e preencha os dados
+
+### 2. Executar o app:
+
+```bash
+bun dev
 ```
 
-### To add components:
+### 3. Acessar o dashboard:
 
-Create `src/components/` directory and add components:
-```tsx
-// src/components/ui/Button.tsx
-export function Button({ children }: { children: React.ReactNode }) {
-  return <button className="px-4 py-2 bg-blue-600 text-white rounded">{children}</button>;
-}
-```
-
-### To add a database:
-
-Follow `.kilocode/recipes/add-database.md`
-
-### To add API routes:
-
-Create `src/app/api/[route]/route.ts`:
-```tsx
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({ message: "Hello" });
-}
-```
-
-## Available Recipes
-
-| Recipe | File | Use Case |
-|--------|------|----------|
-| Add Database | `.kilocode/recipes/add-database.md` | Data persistence with Drizzle + SQLite |
-
-## Pending Improvements
-
-- [ ] Add more recipes (auth, email, etc.)
-- [ ] Add example components
-- [ ] Add testing setup recipe
+Abra http://localhost:3000 e clique em "Conectar com Google"
 
 ## Session History
 
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2026-03-06 | Solar Energy Dashboard implementation |
+
+## Dependencies Added
+
+- googleapis (v144.0.0) - Gmail API
+- recharts (v2.15.4) - Gráficos
+- date-fns (v4.1.0) - Manipulação de datas
