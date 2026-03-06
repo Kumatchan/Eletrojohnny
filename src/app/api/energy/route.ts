@@ -10,9 +10,17 @@ export async function GET(request: Request) {
     const refresh = searchParams.get('refresh') === 'true';
     
     // Verifica se o OAuth está configurado
+    // Temporariamente forçando needsAuth para teste
     if (!isOAuthConfigured()) {
       // Retorna dados de demonstração se OAuth não estiver configurado
-      return NextResponse.json(getDemoData());
+      // return NextResponse.json(getDemoData());
+      
+      // Forçar login para teste
+      return NextResponse.json({
+        needsAuth: true,
+        message: 'Autenticação necessária',
+        authUrl: `/api/auth?redirect=${encodeURIComponent('/dashboard')}`,
+      });
     }
     
     // Em produção, os tokens seriam armazenados de forma segura
