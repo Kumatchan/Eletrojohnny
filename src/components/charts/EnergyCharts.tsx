@@ -51,18 +51,20 @@ export function EnergyAreaChart({ data }: { data: DailySummary[] }) {
               <stop offset="95%" stopColor={COLORS.consumed} stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" className="dark:stroke-slate-700" />
           <XAxis 
             dataKey="date" 
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <YAxis 
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
             tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <Tooltip 
             contentStyle={{ 
@@ -93,7 +95,82 @@ export function EnergyAreaChart({ data }: { data: DailySummary[] }) {
           />
           <Legend 
             wrapperStyle={{ paddingTop: '20px' }}
-            formatter={(value) => <span className="text-sm text-gray-600">{value}</span>}
+            formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * Gráfico de área para um único dado (produção, consumo, etc)
+ */
+export function SingleAreaChart({ 
+  data, 
+  dataKey,
+  color 
+}: { 
+  data: DailySummary[] | MonthlySummary[]; 
+  dataKey: string;
+  color: string;
+}) {
+  const isDaily = 'date' in (data[0] || {});
+  
+  const chartData = data.map((d: any) => ({
+    ...d,
+    date: isDaily 
+      ? new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      : new Date(d.month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+  }));
+
+  const dataKeyLabel = dataKey === 'produced' ? 'Produzida' 
+    : dataKey === 'consumed' ? 'Consumida'
+    : dataKey === 'exported' ? 'Vendida'
+    : 'Comprada';
+
+  return (
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`color${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
+              <stop offset="95%" stopColor={color} stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" className="dark:stroke-slate-700" />
+          <XAxis 
+            dataKey="date"
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <YAxis 
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: 'none',
+              borderRadius: '12px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+            formatter={(value: number) => [`${value.toFixed(2)} kWh`]}
+          />
+          <Area
+            type="monotone"
+            dataKey={dataKey}
+            stroke={color}
+            fillOpacity={1}
+            fill={`url(#color${dataKey})`}
+            name={dataKeyLabel}
+            strokeWidth={2}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -114,18 +191,20 @@ export function EnergyBarChart({ data }: { data: DailySummary[] }) {
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} className="dark:stroke-slate-700" />
           <XAxis 
             dataKey="date"
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <YAxis 
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
             tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <Tooltip 
             contentStyle={{ 
@@ -140,8 +219,69 @@ export function EnergyBarChart({ data }: { data: DailySummary[] }) {
           <Bar dataKey="exported" name="Vendida" fill={COLORS.exported} radius={[4, 4, 0, 0]} />
           <Legend 
             wrapperStyle={{ paddingTop: '20px' }}
-            formatter={(value) => <span className="text-sm text-gray-600">{value}</span>}
+            formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
           />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * Gráfico de barras para um único dado
+ */
+export function SingleBarChart({ 
+  data, 
+  dataKey,
+  color 
+}: { 
+  data: DailySummary[] | MonthlySummary[]; 
+  dataKey: string;
+  color: string;
+}) {
+  const isDaily = 'date' in (data[0] || {});
+  
+  const chartData = data.slice(-7).map((d: any) => ({
+    ...d,
+    date: isDaily 
+      ? new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      : new Date(d.month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+  }));
+
+  const dataKeyLabel = dataKey === 'produced' ? 'Produzida' 
+    : dataKey === 'consumed' ? 'Consumida'
+    : dataKey === 'exported' ? 'Vendida'
+    : 'Comprada';
+
+  return (
+    <div className="h-[300px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} className="dark:stroke-slate-700" />
+          <XAxis 
+            dataKey="date"
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <YAxis 
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tickLine={false}
+            axisLine={{ stroke: '#E5E7EB' }}
+            tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: 'none',
+              borderRadius: '12px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+            formatter={(value: number) => [`${value.toFixed(2)} kWh`]}
+          />
+          <Bar dataKey={dataKey} name={dataKeyLabel} fill={color} radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -195,28 +335,34 @@ export function DistributionPieChart({ data }: { data: MonthlySummary }) {
 /**
  * Gráfico de barras mensal
  */
-export function MonthlyBarChart({ data }: { data: MonthlySummary[] }) {
-  const chartData = data.map(d => ({
+export function MonthlyBarChart({ data }: { data: MonthlySummary[] | DailySummary[] }) {
+  const isMonthly = 'month' in (data[0] || {});
+  
+  const chartData = data.map((d: any) => ({
     ...d,
-    month: new Date(d.month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+    period: isMonthly 
+      ? new Date(d.month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+      : new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
   }));
 
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} className="dark:stroke-slate-700" />
           <XAxis 
-            dataKey="month"
+            dataKey="period"
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <YAxis 
             tick={{ fontSize: 12, fill: '#6B7280' }}
             tickLine={false}
             axisLine={{ stroke: '#E5E7EB' }}
             tickFormatter={(value) => `${value} kWh`}
+            className="dark:stroke-slate-600 dark:fill-slate-400"
           />
           <Tooltip 
             contentStyle={{ 
@@ -227,11 +373,20 @@ export function MonthlyBarChart({ data }: { data: MonthlySummary[] }) {
             }}
             formatter={(value: number) => [`${value.toFixed(1)} kWh`]}
           />
-          <Bar dataKey="totalProduced" name="Produzida" fill={COLORS.produced} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="totalConsumed" name="Consumida" fill={COLORS.consumed} radius={[4, 4, 0, 0]} />
+          {isMonthly ? (
+            <>
+              <Bar dataKey="totalProduced" name="Produzida" fill={COLORS.produced} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="totalConsumed" name="Consumida" fill={COLORS.consumed} radius={[4, 4, 0, 0]} />
+            </>
+          ) : (
+            <>
+              <Bar dataKey="produced" name="Produzida" fill={COLORS.produced} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="consumed" name="Consumida" fill={COLORS.consumed} radius={[4, 4, 0, 0]} />
+            </>
+          )}
           <Legend 
             wrapperStyle={{ paddingTop: '20px' }}
-            formatter={(value) => <span className="text-sm text-gray-600">{value}</span>}
+            formatter={(value) => <span className="text-sm text-gray-600 dark:text-gray-300">{value}</span>}
           />
         </BarChart>
       </ResponsiveContainer>

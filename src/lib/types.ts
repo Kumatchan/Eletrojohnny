@@ -33,6 +33,7 @@ export interface DashboardStats {
   last7Days: DailySummary[];
   last30Days: DailySummary[];
   monthlyData: MonthlySummary[];
+  yearlyData: MonthlySummary[];
   totalProduced: number;
   totalExported: number;
   totalImported: number;

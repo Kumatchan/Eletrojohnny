@@ -152,6 +152,28 @@ function getDemoData(): DashboardStats {
   
   const todayData = last30Days[last30Days.length - 1];
   
+  // Gera dados anuais (por ano)
+  const yearlyData = [
+    {
+      month: '2024-01',
+      totalConsumed: 3500,
+      totalImported: 1200,
+      totalExported: 1800,
+      totalProduced: 4200,
+      totalSavings: 45.00,
+      days: 365,
+    },
+    {
+      month: '2025-01',
+      totalConsumed: 3800,
+      totalImported: 1400,
+      totalExported: 2100,
+      totalProduced: 4800,
+      totalSavings: 62.50,
+      days: 365,
+    },
+  ];
+  
   return {
     today: {
       date: todayData.date,
@@ -164,6 +186,7 @@ function getDemoData(): DashboardStats {
     last7Days: last30Days.slice(-7),
     last30Days,
     monthlyData,
+    yearlyData,
     totalProduced: monthlyData.reduce((sum, m) => sum + m.totalProduced, 0),
     totalExported: monthlyData.reduce((sum, m) => sum + m.totalExported, 0),
     totalImported: monthlyData.reduce((sum, m) => sum + m.totalImported, 0),

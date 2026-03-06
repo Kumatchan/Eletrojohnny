@@ -223,6 +223,7 @@ export function createDashboardStats(data: EnergyData[]): DashboardStats {
       last7Days: [],
       last30Days: [],
       monthlyData: [],
+      yearlyData: [],
       totalProduced: 0,
       totalExported: 0,
       totalImported: 0,
@@ -234,6 +235,41 @@ export function createDashboardStats(data: EnergyData[]): DashboardStats {
   const last7Days = data.slice(-7).map(createDailySummary);
   const last30Days = data.slice(-30).map(createDailySummary);
   const monthlyData = createMonthlySummary(data);
+  
+  // Cria dados anuais (resumo por ano)
+  const yearlyMap = new Map<string, EnergyData[]>();
+  
+  for (const item of data) {
+    const year = item.date.substring(0, 4); // YYYY
+    if (!yearlyMap.has(year)) {
+      yearlyMap.set(year, []);
+    }
+    yearlyMap.get(year)!.push(item);
+  }
+  
+  const yearlyData: MonthlySummary[] = [];
+  
+  for (const [year, items] of yearlyMap) {
+    const summary: MonthlySummary = {
+      month: `${year}-01`,
+      totalConsumed: 0,
+      totalImported: 0,
+      totalExported: 0,
+      totalProduced: 0,
+      totalSavings: 0,
+      days: items.length,
+    };
+    
+    for (const item of items) {
+      summary.totalConsumed += item.consumed;
+      summary.totalImported += item.imported;
+      summary.totalExported += item.exported;
+      summary.totalProduced += item.produced;
+      summary.totalSavings += calculateSavings(item.imported, item.exported);
+    }
+    
+    yearlyData.push(summary);
+  }
   
   let totalProduced = 0;
   let totalExported = 0;
@@ -252,6 +288,7 @@ export function createDashboardStats(data: EnergyData[]): DashboardStats {
     last7Days,
     last30Days,
     monthlyData,
+    yearlyData,
     totalProduced,
     totalExported,
     totalImported,
