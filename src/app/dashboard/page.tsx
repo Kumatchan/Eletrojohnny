@@ -152,10 +152,10 @@ function DashboardContent() {
   // Get number of items to show based on period
   const getSliceCount = (period: TimePeriod): number | undefined => {
     switch (period) {
-      case 'daily': return undefined; // Show all 30 days
-      case 'weekly': return 7;
-      case 'monthly': return undefined; // Show all 12 months
-      case 'yearly': return undefined; // Show all 5 years
+      case 'daily': return 1; // Show only last data point
+      case 'weekly': return 7; // Show last 7 days
+      case 'monthly': return 30; // Show last 30 days
+      case 'yearly': return 12; // Show last 12 months
       default: return undefined;
     }
   };
@@ -165,10 +165,10 @@ function DashboardContent() {
   // Get period label
   const getPeriodLabel = (period: TimePeriod) => {
     const labels = {
-      daily: 'Diário (30 dias)',
+      daily: 'Diário (último dado)',
       weekly: 'Semanal (7 dias)',
-      monthly: 'Mensal (12 meses)',
-      yearly: 'Anual (todos os anos)',
+      monthly: 'Mensal (30 dias)',
+      yearly: 'Anual (12 meses)',
     };
     return labels[period];
   };
@@ -363,10 +363,10 @@ function DashboardContent() {
           {/* Evolução da Energia */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              {timePeriod === 'daily' ? 'Evolução da Energia (30 dias)' 
-                : timePeriod === 'weekly' ? 'Evolução Semanal'
-                : timePeriod === 'monthly' ? 'Evolução Mensal'
-                : 'Evolução Anual'}
+              {timePeriod === 'daily' ? 'Evolução da Energia (último dado)' 
+                : timePeriod === 'weekly' ? 'Evolução Semanal (7 dias)'
+                : timePeriod === 'monthly' ? 'Evolução Mensal (30 dias)'
+                : 'Evolução Anual (12 meses)'}
             </h2>
             
             {selectedChartType === 'all' ? (
@@ -386,10 +386,10 @@ function DashboardContent() {
           {/* Compra e Venda */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              {timePeriod === 'daily' ? 'Energia Comprada vs Vendida (7 dias)'
-                : timePeriod === 'weekly' ? 'Comparativo Semanal'
-                : timePeriod === 'monthly' ? 'Comparativo Mensal'
-                : 'Comparativo Anual'}
+              {timePeriod === 'daily' ? 'Energia Comprada vs Vendida'
+                : timePeriod === 'weekly' ? 'Comparativo Semanal (7 dias)'
+                : timePeriod === 'monthly' ? 'Comparativo Mensal (30 dias)'
+                : 'Comparativo Anual (12 meses)'}
             </h2>
             
             {selectedChartType === 'all' ? (
