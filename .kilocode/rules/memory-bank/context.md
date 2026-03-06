@@ -22,6 +22,8 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 - [x] Dark/Light mode toggle
 - [x] Chart type selector (produced, consumed, exported, imported, all)
 - [x] Time period selector (daily, weekly, monthly, yearly)
+- [x] Dashboard accessible without login (demo data by default)
+- [x] Optional Gmail login button in header
 
 ## Current Structure
 
@@ -38,17 +40,16 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 
 ## Current Focus
 
-Dashboard operacional com dados de demonstração e novas funcionalidades:
+Dashboard operacional com acesso livre e botão opcional de login com Gmail:
 
-1. Botão para alternar entre tema claro e escuro
-2. Seletor de tipo de gráfico (Produção, Consumo, Exportação, Importação, Todos)
-3. Seletor de período (Diário, Semanal, Mensal, Anual)
+1. ✅ Dashboard acessível sem necessidade de login (dados de demonstração)
+2. ✅ Botão "Login Gmail" no canto superior direito
+3. ✅ Dados de demonstração carregados automaticamente
 
-Próximos passos:
-
-1. Configurar OAuth2 no Google Cloud Console
+Próximos passos opcionais:
+1. Configurar OAuth2 no Google Cloud Console (para conectar Gmail real)
 2. Preencher variáveis de ambiente
-3. Conectar conta Gmail
+3. Conectar conta Gmail para ver dados reais
 
 ## Como Usar
 
@@ -81,6 +82,7 @@ Abra http://localhost:3000 e clique em "Conectar com Google"
 | Initial | Template created with base setup |
 | 2026-03-06 | Solar Energy Dashboard implementation |
 | 2026-03-06 | Added dark/light mode, chart type selector, time period selector |
+| 2026-03-06 | Dashboard accessible without login, added optional Gmail login button |
 
 ## Dependencies Added
 
