@@ -10,29 +10,25 @@ export async function GET(request: Request) {
     const refresh = searchParams.get('refresh') === 'true';
     
     // Verifica se o OAuth está configurado
-    // Temporariamente forçando needsAuth para teste
+    // Se não estiver, retorna dados de demonstração
     if (!isOAuthConfigured()) {
       // Retorna dados de demonstração se OAuth não estiver configurado
-      // return NextResponse.json(getDemoData());
-      
-      // Forçar login para teste
-      return NextResponse.json({
-        needsAuth: true,
-        message: 'Autenticação necessária',
-        authUrl: `/api/auth?redirect=${encodeURIComponent('/dashboard')}`,
-      });
+      return NextResponse.json(getDemoData());
+    }
+    
+    // Verifica se o OAuth está configurado
+    // Se não estiver, retorna dados de demonstração
+    if (!isOAuthConfigured()) {
+      return NextResponse.json(getDemoData());
     }
     
     // Em produção, os tokens seriam armazenados de forma segura
     // Por enquanto, vamos verificar se temos tokens na sessão/cookie
     const tokensParam = searchParams.get('tokens');
     
+    // Se não há tokens, retorna dados de demonstração
     if (!tokensParam) {
-      return NextResponse.json({
-        needsAuth: true,
-        message: 'Autenticação necessária',
-        authUrl: `/api/auth?redirect=${encodeURIComponent('/dashboard')}`,
-      });
+      return NextResponse.json(getDemoData());
     }
     
     let tokens;
