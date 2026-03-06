@@ -181,8 +181,8 @@ export function SingleAreaChart({
 /**
  * Gráfico de barras para comparação diária
  */
-export function EnergyBarChart({ data }: { data: DailySummary[] }) {
-  const chartData = data.slice(-7).map(d => ({
+export function EnergyBarChart({ data, sliceCount }: { data: DailySummary[]; sliceCount?: number }) {
+  const chartData = (sliceCount ? data.slice(-sliceCount) : data).map(d => ({
     ...d,
     date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
   }));
@@ -233,15 +233,17 @@ export function EnergyBarChart({ data }: { data: DailySummary[] }) {
 export function SingleBarChart({ 
   data, 
   dataKey,
-  color 
+  color,
+  sliceCount 
 }: { 
   data: DailySummary[] | MonthlySummary[]; 
   dataKey: string;
   color: string;
+  sliceCount?: number;
 }) {
   const isDaily = 'date' in (data[0] || {});
   
-  const chartData = data.slice(-7).map((d: any) => ({
+  const chartData = (sliceCount ? data.slice(-sliceCount) : data).map((d: any) => ({
     ...d,
     date: isDaily 
       ? new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })

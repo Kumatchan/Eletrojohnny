@@ -97,7 +97,6 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light');
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
 
@@ -109,13 +108,6 @@ function DashboardContent() {
     
     fetchEnergyData(tokens);
   }, []);
-
-  // Apply theme to document
-  useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(currentTheme);
-    localStorage.setItem('theme', currentTheme);
-  }, [currentTheme]);
 
   const fetchEnergyData = async (tokens?: string | null) => {
     try {
@@ -153,8 +145,19 @@ function DashboardContent() {
       daily: stats.last30Days,
       weekly: stats.last7Days,
       monthly: stats.monthlyData,
-      yearly: stats.yearlyData || stats.monthlyData, // Fallback if yearly not available
+      yearly: stats.yearlyData || stats.monthlyData,
     };
+  };
+
+  // Get number of items to show based on period
+  const getSliceCount = (period: TimePeriod): number | undefined => {
+    switch (period) {
+      case 'daily': return undefined; // Show all 30 days
+      case 'weekly': return 7;
+      case 'monthly': return undefined; // Show all 12 months
+      case 'yearly': return undefined; // Show all 5 years
+      default: return undefined;
+    }
   };
 
   const timePeriodData = getTimePeriodData();
@@ -390,7 +393,7 @@ function DashboardContent() {
             </h2>
             
             {selectedChartType === 'all' ? (
-              <EnergyBarChart data={timePeriodData[timePeriod] as any} />
+              <EnergyBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} />
             ) : (
               <SingleBarChart 
                 data={timePeriodData[timePeriod] as any} 
@@ -399,6 +402,7 @@ function DashboardContent() {
                   : selectedChartType === 'consumed' ? '#3B82F6' 
                   : selectedChartType === 'exported' ? '#F59E0B' 
                   : '#EF4444'}
+                sliceCount={getSliceCount(timePeriod)}
               />
             )}
           </div>
