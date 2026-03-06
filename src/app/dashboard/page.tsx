@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, createContext, useContext } from 'react';
-import { DashboardStats } from '@/lib/types';
+import { DashboardStats, DailySummary, MonthlySummary } from '@/lib/types';
 import { StatCard } from '@/components/ui/StatCard';
 import { 
   EnergyAreaChart, 
@@ -90,6 +90,15 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 // Time Period Types
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
+// Selection Types for each period
+type DaySelection = { date: string; };
+type WeekSelection = { startDate: string; };
+type MonthSelection = { month: string; }; // YYYY-MM
+type YearSelection = { year: number; };
+
+// Combined selection type
+type PeriodSelection = DaySelection | WeekSelection | MonthSelection | YearSelection;
+
 // Chart Data Type
 type ChartDataType = 'produced' | 'consumed' | 'exported' | 'imported' | 'all';
 
@@ -104,6 +113,11 @@ function DashboardContent() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
   const [chartViewType, setChartViewType] = useState<ChartViewType>('area');
+  
+  // Selection states for each period
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
@@ -142,25 +156,65 @@ function DashboardContent() {
     window.location.href = '/api/auth?redirect=/dashboard';
   };
 
-  // Get data based on time period
+  // Get data based on time period and selected date/month/year
   const getTimePeriodData = () => {
     if (!stats) return { daily: [], weekly: [], monthly: [], yearly: [] };
     
+    // Daily: filter by selected date
+    const dailyData = stats.last30Days.filter(d => d.date === selectedDate);
+    
+    // Weekly: get 7 days starting from selected date
+    const weekStart = new Date(selectedDate);
+    const weeklyData: DailySummary[] = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(weekStart.getDate() - i);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayData = stats.last30Days.find(d => d.date === dateStr);
+      if (dayData) weeklyData.push(dayData);
+    }
+    
+    // Monthly: filter by selected month (YYYY-MM)
+    const monthlyData = stats.monthlyData.filter(m => m.month === selectedMonth);
+    
+    // Yearly: filter by selected year
+    const yearlyData = stats.yearlyData.filter(m => m.month.startsWith(`${selectedYear}-`));
+    
+    // Ensure we have 12 months for yearly view (pad with empty data if needed)
+    const paddedYearlyData: MonthlySummary[] = [];
+    for (let i = 1; i <= 12; i++) {
+      const monthStr = `${selectedYear}-${i.toString().padStart(2, '0')}`;
+      const existing = yearlyData.find(m => m.month === monthStr);
+      if (existing) {
+        paddedYearlyData.push(existing);
+      } else {
+        paddedYearlyData.push({
+          month: monthStr,
+          totalConsumed: 0,
+          totalImported: 0,
+          totalExported: 0,
+          totalProduced: 0,
+          totalSavings: 0,
+          days: 0
+        });
+      }
+    }
+    
     return {
-      daily: stats.last30Days,
-      weekly: stats.last7Days,
-      monthly: stats.monthlyData,
-      yearly: stats.yearlyData || stats.monthlyData,
+      daily: dailyData.length > 0 ? [dailyData[0]] : [],
+      weekly: weeklyData,
+      monthly: monthlyData.length > 0 ? [monthlyData[0]] : [],
+      yearly: paddedYearlyData,
     };
   };
 
   // Get number of items to show based on period
   const getSliceCount = (period: TimePeriod): number | undefined => {
     switch (period) {
-      case 'daily': return 1; // Show only last data point
-      case 'weekly': return 7; // Show last 7 days
-      case 'monthly': return 30; // Show last 30 days
-      case 'yearly': return 12; // Show last 12 months
+      case 'daily': return 1; // Show only selected day
+      case 'weekly': return 7; // Show 7 days from selected date
+      case 'monthly': return 1; // Show selected month
+      case 'yearly': return 12; // Show all 12 months
       default: return undefined;
     }
   };
@@ -169,11 +223,15 @@ function DashboardContent() {
 
   // Get period label
   const getPeriodLabel = (period: TimePeriod) => {
+    const dateLabel = new Date(selectedDate).toLocaleDateString('pt-BR');
+    const [year, month] = selectedMonth.split('-');
+    const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', { month: 'long' });
+    
     const labels = {
-      daily: 'Diário (último dado)',
-      weekly: 'Semanal (7 dias)',
-      monthly: 'Mensal (30 dias)',
-      yearly: 'Anual (12 meses)',
+      daily: `Diário (${dateLabel})`,
+      weekly: `Semanal (7 dias a partir de ${dateLabel})`,
+      monthly: `Mensal (${monthName} de ${year})`,
+      yearly: `Anual (${selectedYear})`,
     };
     return labels[period];
   };
@@ -250,6 +308,43 @@ function DashboardContent() {
                 <option value="monthly">Mês</option>
                 <option value="yearly">Ano</option>
               </select>
+
+              {/* Date/Month/Year Selector based on period */}
+              {timePeriod === 'daily' && (
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white border-0 cursor-pointer focus:ring-2 focus:ring-yellow-400"
+                />
+              )}
+              {timePeriod === 'weekly' && (
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white border-0 cursor-pointer focus:ring-2 focus:ring-yellow-400"
+                />
+              )}
+              {timePeriod === 'monthly' && (
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white border-0 cursor-pointer focus:ring-2 focus:ring-yellow-400"
+                />
+              )}
+              {timePeriod === 'yearly' && (
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white border-0 cursor-pointer focus:ring-2 focus:ring-yellow-400"
+                >
+                  {[2024, 2025, 2026, 2027, 2028].map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              )}
 
               {/* Theme Toggle */}
               <button
