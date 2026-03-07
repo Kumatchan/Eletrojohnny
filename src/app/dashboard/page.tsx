@@ -233,8 +233,8 @@ function DashboardContent() {
   // Get chart type label
   const getChartTypeLabel = (type: ChartDataType) => {
     const labels = {
-      produced: 'Produção',
-      consumed: 'Consumo',
+      produced: 'Produzido',
+      consumed: 'Consumido',
       exported: 'Vendido',
       imported: 'Comprado',
       all: 'Todos',
