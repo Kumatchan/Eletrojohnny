@@ -1,11 +1,25 @@
 import { NextResponse } from 'next/server';
 import { createOAuth2Client, getAuthUrl, getTokens } from '@/lib/google-auth';
 
-// GET: Inicia o fluxo de autenticação
+// GET: Inicia o fluxo de autenticação ou verifica configuração
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const redirect = searchParams.get('redirect') || '/dashboard';
+  const check = searchParams.get('check');
+
+  // Verifica se é apenas uma verificação de configuração
+  if (check === 'true') {
+    const isConfigured = !!(
+      process.env.GOOGLE_CLIENT_ID && 
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+    
+    return NextResponse.json({
+      configured: isConfigured,
+      clientId: !!process.env.GOOGLE_CLIENT_ID,
+      clientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    });
+  }
   
   // Verifica se o OAuth está configurado
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -16,10 +30,12 @@ export async function GET(request: Request) {
     }, { status: 400 });
   }
   
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth';
+  
   const oauth2Client = createOAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth',
+    redirectUri,
   });
   
   // Se temos um código, trocamos por tokens
@@ -32,7 +48,7 @@ export async function GET(request: Request) {
       
       // Redireciona de volta para o app com os tokens
       return NextResponse.redirect(
-        new URL(`${redirect}?tokens=${tokensEncoded}`, request.url)
+        new URL(`/dashboard?tokens=${tokensEncoded}`, request.url)
       );
     } catch (error) {
       console.error('Erro ao obter tokens:', error);

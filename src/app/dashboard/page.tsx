@@ -107,6 +107,9 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasGmailData, setHasGmailData] = useState(false);
   
   // Selection states for each period
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -115,24 +118,68 @@ function DashboardContent() {
 
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext) ?? { theme: 'light' as Theme, toggleTheme: () => {} };
 
+  // Check for existing login on mount
   useEffect(() => {
-    fetchEnergyData();
+    if (typeof window !== 'undefined') {
+      const tokens = localStorage.getItem('gmail_tokens');
+      if (tokens) {
+        setIsLoggedIn(true);
+        // Fetch data with existing tokens
+        fetchEnergyData();
+      }
+    }
+  }, []);
+
+  // Handle OAuth tokens from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokensParam = params.get('tokens');
+    
+    if (tokensParam) {
+      // Save tokens to localStorage
+      localStorage.setItem('gmail_tokens', tokensParam);
+      
+      // Remove tokens from URL
+      window.history.replaceState({}, document.title, '/dashboard');
+      
+      // Fetch data with tokens
+      fetchEnergyData();
+    }
   }, []);
 
   const fetchEnergyData = async () => {
     try {
       setLoading(true);
       
-      // Get userId from localStorage (same as configurar page)
-      let userId = 'default';
+      // Get tokens from localStorage
+      let tokens = null;
       if (typeof window !== 'undefined') {
-        userId = localStorage.getItem('solar_user_id') || 'default';
+        const tokensParam = localStorage.getItem('gmail_tokens');
+        if (tokensParam) {
+          tokens = tokensParam;
+        }
       }
       
-      const response = await fetch(`/api/energy?userId=${userId}`);
+      // Build URL with tokens if available
+      const url = tokens 
+        ? `/api/energy?tokens=${encodeURIComponent(tokens)}`
+        : '/api/energy';
+      
+      const response = await fetch(url);
       const data = await response.json();
       
       setStats(data);
+      
+      // Check if user is logged in
+      if (data.user?.email) {
+        setUserEmail(data.user.email);
+        setIsLoggedIn(true);
+      }
+      
+      // Check if we have real Gmail data
+      if (data.hasGmailData) {
+        setHasGmailData(true);
+      }
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error(err);
@@ -258,6 +305,18 @@ function DashboardContent() {
     if (yesterday === 0) return { value: today > 0 ? 100 : 0, isPositive: today > 0 };
     const change = ((today - yesterday) / yesterday) * 100;
     return { value: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  // Logout function
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gmail_tokens');
+      setIsLoggedIn(false);
+      setUserEmail(null);
+      setHasGmailData(false);
+      // Reload to get demo data
+      window.location.href = '/';
+    }
   };
 
   // Get today's values
@@ -394,17 +453,63 @@ function DashboardContent() {
                 {currentTheme === 'light' ? <MoonIcon /> : <SunIcon />}
               </button>
 
-              {/* Config Button */}
-              <Link
-                href="/configurar"
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                aria-label="Configurar e-mail"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </Link>
+              {/* Gmail Status & Logout */}
+              {isLoggedIn ? (
+                <div className="flex items-center gap-2">
+                  {/* Gmail Status Indicator */}
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
+                    hasGmailData 
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  }`}>
+                    {hasGmailData ? (
+                      <>
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Gmail</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Carregando</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* User Email */}
+                  {userEmail && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400 hidden md:inline">
+                      {userEmail.split('@')[0]}
+                    </span>
+                  )}
+                  
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                    aria-label="Sair"
+                    title="Sair da conta Google"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Login Button */}
+                  <Link
+                    href="/"
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    Login Google
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
