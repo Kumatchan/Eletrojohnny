@@ -107,8 +107,18 @@ function DashboardContent() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('daily');
   const [selectedChartType, setSelectedChartType] = useState<ChartDataType>('all');
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [authTokens, setAuthTokens] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('userEmail');
+    }
+    return null;
+  });
+  const [authTokens, setAuthTokens] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('authTokens');
+    }
+    return null;
+  });
   
   // Selection states for each period
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -122,11 +132,21 @@ function DashboardContent() {
     const tokens = params.get('tokens');
     
     if (tokens) {
+      // Salva tokens no localStorage
+      localStorage.setItem('authTokens', tokens);
       setAuthTokens(tokens);
       fetchUserInfo(tokens);
+    } else {
+      // Tenta recuperar do localStorage
+      const storedTokens = localStorage.getItem('authTokens');
+      if (storedTokens) {
+        setAuthTokens(storedTokens);
+        fetchUserInfo(storedTokens);
+      }
     }
     
-    fetchEnergyData(tokens);
+    const tokensToUse = tokens || localStorage.getItem('authTokens');
+    fetchEnergyData(tokensToUse);
   }, []);
 
   const fetchEnergyData = async (tokens?: string | null) => {
@@ -155,10 +175,13 @@ function DashboardContent() {
 
   const fetchUserInfo = async (tokens: string) => {
     try {
+      console.log('Fetching user info with tokens...');
       const response = await fetch(`/api/user?tokens=${encodeURIComponent(tokens)}`);
       const data = await response.json();
+      console.log('User info response:', data);
       if (data.email) {
         setUserEmail(data.email);
+        localStorage.setItem('userEmail', data.email);
       }
     } catch (err) {
       console.error('Erro ao obter info do usuário:', err);
@@ -170,7 +193,9 @@ function DashboardContent() {
   };
 
   const handleLogout = () => {
-    // Limpar URL e tokens
+    // Limpar localStorage e redirect
+    localStorage.removeItem('authTokens');
+    localStorage.removeItem('userEmail');
     window.location.href = '/dashboard';
   };
 
