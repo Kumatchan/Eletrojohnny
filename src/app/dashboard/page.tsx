@@ -178,7 +178,20 @@ function DashboardContent() {
       console.log('Fetching user info with tokens...');
       const response = await fetch(`/api/user?tokens=${encodeURIComponent(tokens)}`);
       const data = await response.json();
-      console.log('User info response:', data);
+      console.log('User info response:', response.status, data);
+      
+      if (!response.ok) {
+        console.error('Erro da API:', data.error, data.details);
+        // Token expirado ou inválido - limpa e deixa fazer login novamente
+        if (data.error?.includes('expired') || data.error?.includes('invalid') || data.error?.includes('Token')) {
+          localStorage.removeItem('authTokens');
+          localStorage.removeItem('userEmail');
+          setAuthTokens(null);
+          setUserEmail(null);
+        }
+        return;
+      }
+      
       if (data.email) {
         setUserEmail(data.email);
         localStorage.setItem('userEmail', data.email);
