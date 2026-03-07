@@ -2,11 +2,16 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "./schema";
 
-// Create SQLite database connection
-const sqlite = new Database("energy_data.db");
+let db: any = null;
+let dbError: string | null = null;
 
-// Create Drizzle instance
-export const db = drizzle(sqlite, { schema });
+// Try to create SQLite database connection, but handle errors gracefully
+try {
+  const sqlite = new Database("energy_data.db");
+  db = drizzle(sqlite, { schema });
+} catch (error: any) {
+  console.error("Erro ao conectar ao banco de dados SQLite:", error?.message || error);
+  dbError = error?.message || "Banco de dados não disponível";
+}
 
-// Export schema for use in other files
-export { schema };
+export { db, schema, dbError };

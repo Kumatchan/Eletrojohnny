@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, dbError } from '@/db';
 import { energyRecords } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { EnergyData, DashboardStats, DailySummary, MonthlySummary } from '@/lib/types';
+import { energyRecords as EnergyRecordsTable } from '@/db/schema';
 
 // Endpoint para buscar dados de energia
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || 'default';
+    
+    // Se o banco de dados não está disponível, retorna dados de demonstração
+    if (!db || dbError) {
+      console.log('Banco de dados não disponível, retornando dados de demonstração');
+      return NextResponse.json(getDemoData());
+    }
     
     // Tenta buscar do banco de dados
     try {
@@ -20,7 +27,7 @@ export async function GET(request: Request) {
 
       if (records.length > 0) {
         // Converter registros do banco para formato do dashboard
-        const energyData: EnergyData[] = records.map(r => ({
+        const energyData: EnergyData[] = records.map((r: typeof EnergyRecordsTable.$inferSelect) => ({
           date: r.date,
           consumed: r.consumed,
           imported: r.imported,
