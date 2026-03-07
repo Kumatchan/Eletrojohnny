@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, createContext, useContext } from 'react';
 import { DashboardStats, DailySummary, MonthlySummary } from '@/lib/types';
 import { StatCard } from '@/components/ui/StatCard';
+import { EmailParser } from '@/components/ui/EmailParser';
 import { 
   EnergyBarChart, 
   DistributionPieChart, 
@@ -621,6 +622,15 @@ function DashboardContent() {
               />
             )}
           </div>
+        </div>
+
+        {/* Email Parser - Extract data from energy emails */}
+        <div className="mb-8">
+          <EmailParser 
+            onDataExtracted={(data) => {
+              console.log('Data extracted:', data);
+            }}
+          />
         </div>
 
       </main>
