@@ -29,6 +29,8 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 - [x] Logout functionality
 - [x] Improved error handling for user info API
 - [x] Token expiration detection and handling
+- [x] Email parser component for manual data extraction
+- [x] API endpoint for email forwarding (any email provider)
 
 ## Current Structure
 
@@ -38,9 +40,12 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 | `src/app/api/energy/route.ts` | Energy data API | ✅ Ready |
 | `src/app/api/auth/route.ts` | OAuth authentication | ✅ Ready |
 | `src/app/api/user/route.ts` | User info API | ✅ Ready |
+| `src/app/api/energy/parse/route.ts` | Email parsing API | ✅ Ready |
+| `src/app/api/email-forward/route.ts` | Email forwarding API | ✅ Ready |
 | `src/lib/energy-parser.ts` | Email data parser | ✅ Ready |
 | `src/lib/google-auth.ts` | Gmail API utilities | ✅ Ready |
 | `src/components/ui/StatCard.tsx` | Statistics cards | ✅ Ready |
+| `src/components/ui/EmailParser.tsx` | Email parser component | ✅ Ready |
 | `src/components/charts/EnergyCharts.tsx` | Chart components | ✅ Ready |
 | `.env.example` | Environment variables template | ✅ Ready |
 
@@ -92,6 +97,8 @@ Abra http://localhost:3000 e clique em "Conectar com Google"
 | 2026-03-06 | Japanese email parser for kp-net@kp-net.com (消費電力量, 買電電力量, 売電電力量, 全体の発電電力量) |
 | 2026-03-07 | User email display and logout functionality |
 | 2026-03-07 | Token expiration detection and improved error handling |
+| 2026-03-07 | Email parser component for manual data extraction |
+| 2026-03-07 | Email forwarding API endpoint (any email provider) |
 
 ## Dependencies Added
 
