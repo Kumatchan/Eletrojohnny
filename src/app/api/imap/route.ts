@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import imap from 'imap-simple';
-import { db } from '@/db';
+import { db, dbError } from '@/db';
 import { emailConfigs, energyRecords } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { parseJapaneseEnergyEmail, parseEnergyEmail } from '@/lib/energy-parser';
+
+// Check if database is available
+function checkDb() {
+  if (!db) {
+    throw new Error(dbError || 'Banco de dados não disponível');
+  }
+  return db;
+}
 
 interface ImapConfig {
   host: string;
@@ -73,6 +81,7 @@ async function fetchAndProcessEmails(
 
         // Se temos dados válidos, salva no banco
         if (parsed.date && (parsed.produced !== null || parsed.consumed !== null)) {
+          const db = checkDb();
           // Verifica se já existe registro para essa data
           const existing = await db.select()
             .from(energyRecords)
@@ -140,6 +149,7 @@ export async function POST(request: Request) {
     }
 
     // Salva ou atualiza configuração no banco
+    const db = checkDb();
     const existingConfig = await db.select()
       .from(emailConfigs)
       .where(eq(emailConfigs.userId, userId))
@@ -215,6 +225,7 @@ export async function GET(request: Request) {
       );
     }
 
+    const db = checkDb();
     const config = await db.select()
       .from(emailConfigs)
       .where(eq(emailConfigs.userId, userId))
