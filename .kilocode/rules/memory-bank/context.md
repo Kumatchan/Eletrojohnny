@@ -25,6 +25,10 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 - [x] Dashboard accessible without login (demo data by default)
 - [x] Optional Gmail login button in header
 - [x] Japanese email parser for kp-net@kp-net.com emails
+- [x] User email display when logged in
+- [x] Logout functionality
+- [x] Improved error handling for user info API
+- [x] Token expiration detection and handling
 
 ## Current Structure
 
@@ -33,6 +37,7 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 | `src/app/dashboard/page.tsx` | Main dashboard page | ✅ Ready |
 | `src/app/api/energy/route.ts` | Energy data API | ✅ Ready |
 | `src/app/api/auth/route.ts` | OAuth authentication | ✅ Ready |
+| `src/app/api/user/route.ts` | User info API | ✅ Ready |
 | `src/lib/energy-parser.ts` | Email data parser | ✅ Ready |
 | `src/lib/google-auth.ts` | Gmail API utilities | ✅ Ready |
 | `src/components/ui/StatCard.tsx` | Statistics cards | ✅ Ready |
@@ -41,16 +46,16 @@ O aplicativo está pronto para uso com dados de demonstração. Para conectar ao
 
 ## Current Focus
 
-Dashboard operacional com acesso livre e botão opcional de login com Gmail:
+Corrigindo problemas de login:
 
 1. ✅ Dashboard acessível sem necessidade de login (dados de demonstração)
 2. ✅ Botão "Login Gmail" no canto superior direito
 3. ✅ Dados de demonstração carregados automaticamente
+4. ✅ Exibição do e-mail do usuário quando logado
+5. ✅ Botão de logout
+6. ✅ Tratamento de token expirado (limpa localStorage automaticamente)
 
-Próximos passos opcionais:
-1. Configurar OAuth2 no Google Cloud Console (para conectar Gmail real)
-2. Preencher variáveis de ambiente
-3. Conectar conta Gmail para ver dados reais
+Nota: Tokens do Google OAuth2 expiram após 1 hora. Quando expirar, faça login novamente.
 
 ## Como Usar
 
@@ -85,6 +90,8 @@ Abra http://localhost:3000 e clique em "Conectar com Google"
 | 2026-03-06 | Added dark/light mode, chart type selector, time period selector |
 | 2026-03-06 | Dashboard accessible without login, added optional Gmail login button |
 | 2026-03-06 | Japanese email parser for kp-net@kp-net.com (消費電力量, 買電電力量, 売電電力量, 全体の発電電力量) |
+| 2026-03-07 | User email display and logout functionality |
+| 2026-03-07 | Token expiration detection and improved error handling |
 
 ## Dependencies Added
 
