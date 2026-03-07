@@ -62,6 +62,12 @@ Para extrair dados da empresa de energia, precisamos de uma API que **lê** e-ma
 - [x] IMAP connection - removed (doesn't work in Vercel serverless)
 - [x] Removed SQLite database (doesn't work in Vercel serverless)
 - [x] Simplified to email forwarding only
+- [x] Implemented Google OAuth login with Gmail API
+- [x] Added landing page with Google login
+- [x] Created Gmail API endpoint to fetch emails from kp-net@kp-net.com
+- [x] Added user authentication state and logout to dashboard
+- [x] Removed OAuth login page - now redirects root to dashboard
+- [x] Added login button to dashboard header (upper right corner)
 
 ## Current Structure
 
