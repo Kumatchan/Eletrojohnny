@@ -413,39 +413,11 @@ function DashboardContent() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Último Dado - replaces the period label above charts */}
-        <div className="mb-6">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-lg border border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
-              Último Dado ({getLastDataLabel()})
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Produzido</p>
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {lastData ? (lastData as any).produced?.toFixed(1) || (lastData as any).totalProduced?.toFixed(1) || '0' : '0'} kWh
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Consumido</p>
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  {lastData ? (lastData as any).consumed?.toFixed(1) || (lastData as any).totalConsumed?.toFixed(1) || '0' : '0'} kWh
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Vendido</p>
-                <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                  {lastData ? (lastData as any).exported?.toFixed(1) || (lastData as any).totalExported?.toFixed(1) || '0' : '0'} kWh
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Comprado</p>
-                <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                  {lastData ? (lastData as any).imported?.toFixed(1) || (lastData as any).totalImported?.toFixed(1) || '0' : '0'} kWh
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Último Dado - shows just the label above charts */}
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+            Último Dado ({getLastDataLabel()})
+          </h3>
         </div>
 
         {/* Cards de Estatísticas */}
