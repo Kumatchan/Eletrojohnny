@@ -120,14 +120,8 @@ function DashboardContent() {
 
   // Check for existing login on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const tokens = localStorage.getItem('gmail_tokens');
-      if (tokens) {
-        setIsLoggedIn(true);
-        // Fetch data with existing tokens
-        fetchEnergyData();
-      }
-    }
+    // Always fetch data - demo data if not logged in, real data if logged in
+    fetchEnergyData();
   }, []);
 
   // Handle OAuth tokens from URL
