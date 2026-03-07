@@ -496,6 +496,59 @@ function DashboardContent() {
           />
         </div>
 
+        {/* Gráficos Principais - Based on time period and chart type */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Evolução da Energia */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
+              {timePeriod === 'daily' ? 'Evolução da Energia (último dado)' 
+                : timePeriod === 'weekly' ? 'Evolução Semanal (7 dias)'
+                : timePeriod === 'monthly' ? 'Evolução Mensal (30 dias)'
+                : 'Evolução Anual (12 meses)'}
+            </h2>
+            
+            {selectedChartType === 'all' ? (
+                <EvolutionBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} barSize={timePeriod === 'daily' ? 25 : undefined} />
+              ) : (
+                <SingleBarChart 
+                  data={timePeriodData[timePeriod] as any} 
+                  dataKey={selectedChartType}
+                  color={selectedChartType === 'produced' ? '#10B981' 
+                    : selectedChartType === 'consumed' ? '#3B82F6' 
+                    : selectedChartType === 'exported' ? '#F59E0B' 
+                    : '#EF4444'}
+                  sliceCount={getSliceCount(timePeriod)}
+                  barSize={timePeriod === 'daily' ? 40 : undefined}
+                />
+              )}
+          </div>
+
+          {/* Compra e Venda */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
+              {timePeriod === 'daily' ? 'Energia Comprada vs Vendida'
+                : timePeriod === 'weekly' ? 'Comparativo Semanal (7 dias)'
+                : timePeriod === 'monthly' ? 'Comparativo Mensal (30 dias)'
+                : 'Comparativo Anual (12 meses)'}
+            </h2>
+            
+            {selectedChartType === 'all' ? (
+              <EnergyBarChart data={timePeriodData[timePeriod] as any} sliceCount={getSliceCount(timePeriod)} barSize={timePeriod === 'daily' ? 40 : undefined} />
+            ) : (
+              <SingleBarChart 
+                data={timePeriodData[timePeriod] as any} 
+                dataKey={selectedChartType}
+                color={selectedChartType === 'produced' ? '#10B981' 
+                  : selectedChartType === 'consumed' ? '#3B82F6' 
+                  : selectedChartType === 'exported' ? '#F59E0B' 
+                  : '#EF4444'}
+                sliceCount={getSliceCount(timePeriod)}
+                barSize={timePeriod === 'daily' ? 40 : undefined}
+              />
+            )}
+          </div>
+        </div>
+
       </main>
     </div>
   );
