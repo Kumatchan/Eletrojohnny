@@ -164,3 +164,20 @@ export function isOAuthConfigured(): boolean {
     process.env.GOOGLE_REDIRECT_URI
   );
 }
+
+/**
+ * Obtém informações do usuário autenticado
+ */
+export async function getUserInfo(auth: any): Promise<{ email: string; name?: string } | null> {
+  try {
+    const oauth2 = google.oauth2({ version: 'v2', auth });
+    const response = await oauth2.userinfo.get();
+    return {
+      email: response.data.email || '',
+      name: response.data.name || undefined,
+    };
+  } catch (error) {
+    console.error('Erro ao obter info do usuário:', error);
+    return null;
+  }
+}
