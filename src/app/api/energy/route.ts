@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db, dbError } from '@/db';
-import { energyRecords } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
 import { EnergyData, DashboardStats, DailySummary, MonthlySummary } from '@/lib/types';
-import { energyRecords as EnergyRecordsTable } from '@/db/schema';
 
 // Endpoint para buscar dados de energia
 export async function GET(request: Request) {
@@ -11,46 +7,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId') || 'default';
     
-    // Se o banco de dados não está disponível, retorna dados de demonstração
-    if (!db || dbError) {
-      console.log('Banco de dados não disponível, retornando dados de demonstração');
-      return NextResponse.json(getDemoData());
-    }
-    
-    // Tenta buscar do banco de dados
-    try {
-      const records = await db.select()
-        .from(energyRecords)
-        .where(eq(energyRecords.userId, userId))
-        .orderBy(desc(energyRecords.date))
-        .limit(365);
-
-      if (records.length > 0) {
-        // Converter registros do banco para formato do dashboard
-        const energyData: EnergyData[] = records.map((r: typeof EnergyRecordsTable.$inferSelect) => ({
-          date: r.date,
-          consumed: r.consumed,
-          imported: r.imported,
-          exported: r.exported,
-          produced: r.produced,
-          selfConsumption: Math.max(0, r.produced - r.exported),
-        }));
-
-        // Ordenar por data
-        energyData.sort((a, b) => a.date.localeCompare(b.date));
-
-        // Criar stats do dashboard
-        const stats = createDashboardStats(energyData);
-        return NextResponse.json(stats);
-      }
-    } catch (dbError) {
-      console.error('Erro ao buscar do banco de dados:', dbError);
-      // Continue para retornar dados de demonstração
-    }
-    
-    // Se não há dados no banco ou houve erro, retorna dados de demonstração
+    // Sempre retorna dados de demonstração
+    // O banco de dados SQLite não funciona em ambientes serverless como Vercel
     return NextResponse.json(getDemoData());
-    
+     
   } catch (error) {
     console.error('Erro ao buscar dados de energia:', error);
     // Em caso de erro, retorna dados de demonstração
