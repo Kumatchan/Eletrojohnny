@@ -27,6 +27,9 @@ O aplicativo usa dados de demonstração por padrão. Para receber dados automat
 - [x] Email forwarding configuration page
 - [x] Removed manual email parser component
 - [x] Removed Gmail login button
+- [x] IMAP connection - removed (doesn't work in Vercel serverless)
+- [x] Removed SQLite database (doesn't work in Vercel serverless)
+- [x] Simplified to email forwarding only
 
 ## Current Structure
 
@@ -94,9 +97,9 @@ Abra http://localhost:3000/dashboard
 | 2026-03-07 | Token expiration detection and improved error handling |
 | 2026-03-07 | Email forwarding API endpoint (any email provider) |
 | 2026-03-07 | Replaced OAuth login with email forwarding configuration |
+| 2026-03-07 | Removed IMAP + SQLite (not compatible with Vercel serverless) |
 
 ## Dependencies Added
 
-- googleapis (v144.0.0) - Gmail API (legacy)
 - recharts (v2.15.4) - Gráficos
 - date-fns (v4.1.0) - Manipulação de datas
