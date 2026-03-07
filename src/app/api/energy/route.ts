@@ -11,32 +11,37 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId') || 'default';
     
     // Tenta buscar do banco de dados
-    const records = await db.select()
-      .from(energyRecords)
-      .where(eq(energyRecords.userId, userId))
-      .orderBy(desc(energyRecords.date))
-      .limit(365);
+    try {
+      const records = await db.select()
+        .from(energyRecords)
+        .where(eq(energyRecords.userId, userId))
+        .orderBy(desc(energyRecords.date))
+        .limit(365);
 
-    if (records.length > 0) {
-      // Converter registros do banco para formato do dashboard
-      const energyData: EnergyData[] = records.map(r => ({
-        date: r.date,
-        consumed: r.consumed,
-        imported: r.imported,
-        exported: r.exported,
-        produced: r.produced,
-        selfConsumption: Math.max(0, r.produced - r.exported),
-      }));
+      if (records.length > 0) {
+        // Converter registros do banco para formato do dashboard
+        const energyData: EnergyData[] = records.map(r => ({
+          date: r.date,
+          consumed: r.consumed,
+          imported: r.imported,
+          exported: r.exported,
+          produced: r.produced,
+          selfConsumption: Math.max(0, r.produced - r.exported),
+        }));
 
-      // Ordenar por data
-      energyData.sort((a, b) => a.date.localeCompare(b.date));
+        // Ordenar por data
+        energyData.sort((a, b) => a.date.localeCompare(b.date));
 
-      // Criar stats do dashboard
-      const stats = createDashboardStats(energyData);
-      return NextResponse.json(stats);
+        // Criar stats do dashboard
+        const stats = createDashboardStats(energyData);
+        return NextResponse.json(stats);
+      }
+    } catch (dbError) {
+      console.error('Erro ao buscar do banco de dados:', dbError);
+      // Continue para retornar dados de demonstração
     }
-
-    // Se não há dados no banco, retorna dados de demonstração
+    
+    // Se não há dados no banco ou houve erro, retorna dados de demonstração
     return NextResponse.json(getDemoData());
     
   } catch (error) {
