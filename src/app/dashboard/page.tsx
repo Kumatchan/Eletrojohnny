@@ -122,7 +122,14 @@ function DashboardContent() {
   const fetchEnergyData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/energy');
+      
+      // Get userId from localStorage (same as configurar page)
+      let userId = 'default';
+      if (typeof window !== 'undefined') {
+        userId = localStorage.getItem('solar_user_id') || 'default';
+      }
+      
+      const response = await fetch(`/api/energy?userId=${userId}`);
       const data = await response.json();
       
       setStats(data);

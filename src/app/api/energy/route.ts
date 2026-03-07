@@ -1,73 +1,190 @@
 import { NextResponse } from 'next/server';
-import { parseEnergyEmail, processEnergyData, createDashboardStats } from '@/lib/energy-parser';
-import { getEmails, extractEmailBody, createAuthenticatedClient, isOAuthConfigured } from '@/lib/google-auth';
-import { EnergyData, DashboardStats } from '@/lib/types';
+import { db } from '@/db';
+import { energyRecords } from '@/db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { EnergyData, DashboardStats, DailySummary, MonthlySummary } from '@/lib/types';
 
 // Endpoint para buscar dados de energia
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const refresh = searchParams.get('refresh') === 'true';
+    const userId = searchParams.get('userId') || 'default';
     
-    // Verifica se o OAuth está configurado
-    // Se não estiver, retorna dados de demonstração
-    if (!isOAuthConfigured()) {
-      // Retorna dados de demonstração se OAuth não estiver configurado
-      return NextResponse.json(getDemoData());
+    // Tenta buscar do banco de dados
+    const records = await db.select()
+      .from(energyRecords)
+      .where(eq(energyRecords.userId, userId))
+      .orderBy(desc(energyRecords.date))
+      .limit(365);
+
+    if (records.length > 0) {
+      // Converter registros do banco para formato do dashboard
+      const energyData: EnergyData[] = records.map(r => ({
+        date: r.date,
+        consumed: r.consumed,
+        imported: r.imported,
+        exported: r.exported,
+        produced: r.produced,
+        selfConsumption: Math.max(0, r.produced - r.exported),
+      }));
+
+      // Ordenar por data
+      energyData.sort((a, b) => a.date.localeCompare(b.date));
+
+      // Criar stats do dashboard
+      const stats = createDashboardStats(energyData);
+      return NextResponse.json(stats);
     }
-    
-    // Em produção, os tokens seriam armazenados de forma segura
-    // Por enquanto, vamos verificar se temos tokens na sessão/cookie
-    const tokensParam = searchParams.get('tokens');
-    
-    // Se não há tokens, retorna dados de demonstração
-    if (!tokensParam) {
-      return NextResponse.json(getDemoData());
-    }
-    
-    let tokens;
-    try {
-      tokens = JSON.parse(Buffer.from(tokensParam, 'base64').toString());
-    } catch {
-      return NextResponse.json({
-        needsAuth: true,
-        message: 'Tokens inválidos',
-      }, { status: 401 });
-    }
-    
-    // Cria cliente autenticado
-    const auth = createAuthenticatedClient(tokens);
-    
-    // Busca e-mails da empresa de energia
-    // Ajuste a query conforme o formato dos e-mails da sua empresa
-    const emails = await getEmails(
-      auth, 
-      'subject:(energia OR consumo OR painel solar OR fotovoltaico) OR from:(energia OR electricidade)',
-      30
-    );
-    
-    // Processa os e-mails
-    const rawData = [];
-    for (const email of emails) {
-      const body = extractEmailBody(email.payload);
-      const parsed = parseEnergyEmail(body);
-      if (parsed.date) {
-        rawData.push(parsed);
-      }
-    }
-    
-    // Processa dados
-    const energyData = processEnergyData(rawData);
-    const stats = createDashboardStats(energyData);
-    
-    return NextResponse.json(stats);
+
+    // Se não há dados no banco, retorna dados de demonstração
+    return NextResponse.json(getDemoData());
     
   } catch (error) {
     console.error('Erro ao buscar dados de energia:', error);
-    
     // Em caso de erro, retorna dados de demonstração
     return NextResponse.json(getDemoData());
   }
+}
+
+/**
+ * Cria estatísticas completas para o dashboard
+ */
+function createDashboardStats(data: EnergyData[]): DashboardStats {
+  if (data.length === 0) {
+    return getDemoData();
+  }
+  
+  const today = data[data.length - 1];
+  const last7Days = data.slice(-7).map(d => createDailySummary(d));
+  const last30Days = data.slice(-30).map(d => createDailySummary(d));
+  const monthlyData = createMonthlySummary(data);
+  
+  // Cria dados anuais (resumo por ano)
+  const yearlyMap = new Map<string, EnergyData[]>();
+  
+  for (const item of data) {
+    const year = item.date.substring(0, 4); // YYYY
+    if (!yearlyMap.has(year)) {
+      yearlyMap.set(year, []);
+    }
+    yearlyMap.get(year)!.push(item);
+  }
+  
+  const yearlyData: MonthlySummary[] = [];
+  
+  for (const [year, items] of yearlyMap) {
+    const summary: MonthlySummary = {
+      month: `${year}-01`,
+      totalConsumed: 0,
+      totalImported: 0,
+      totalExported: 0,
+      totalProduced: 0,
+      totalSavings: 0,
+      days: items.length,
+    };
+    
+    for (const item of items) {
+      summary.totalConsumed += item.consumed;
+      summary.totalImported += item.imported;
+      summary.totalExported += item.exported;
+      summary.totalProduced += item.produced;
+      summary.totalSavings += calculateSavings(item.imported, item.exported);
+    }
+    
+    yearlyData.push(summary);
+  }
+  
+  let totalProduced = 0;
+  let totalExported = 0;
+  let totalImported = 0;
+  let totalSavings = 0;
+  
+  for (const item of data) {
+    totalProduced += item.produced;
+    totalExported += item.exported;
+    totalImported += item.imported;
+    totalSavings += calculateSavings(item.imported, item.exported);
+  }
+  
+  return {
+    today,
+    last7Days,
+    last30Days,
+    monthlyData,
+    yearlyData,
+    totalProduced,
+    totalExported,
+    totalImported,
+    totalSavings,
+  };
+}
+
+/**
+ * Cria o resumo diário
+ */
+function createDailySummary(data: EnergyData): DailySummary {
+  return {
+    date: data.date,
+    consumed: data.consumed,
+    imported: data.imported,
+    exported: data.exported,
+    produced: data.produced,
+    savings: calculateSavings(data.imported, data.exported),
+  };
+}
+
+/**
+ * Cria o resumo mensal
+ */
+function createMonthlySummary(data: EnergyData[]): MonthlySummary[] {
+  const monthlyMap = new Map<string, EnergyData[]>();
+  
+  for (const item of data) {
+    const month = item.date.substring(0, 7); // YYYY-MM
+    if (!monthlyMap.has(month)) {
+      monthlyMap.set(month, []);
+    }
+    monthlyMap.get(month)!.push(item);
+  }
+  
+  const summaries: MonthlySummary[] = [];
+  
+  for (const [month, items] of monthlyMap) {
+    const summary: MonthlySummary = {
+      month,
+      totalConsumed: 0,
+      totalImported: 0,
+      totalExported: 0,
+      totalProduced: 0,
+      totalSavings: 0,
+      days: items.length,
+    };
+    
+    for (const item of items) {
+      summary.totalConsumed += item.consumed;
+      summary.totalImported += item.imported;
+      summary.totalExported += item.exported;
+      summary.totalProduced += item.produced;
+      summary.totalSavings += calculateSavings(item.imported, item.exported);
+    }
+    
+    summaries.push(summary);
+  }
+  
+  return summaries.sort((a, b) => a.month.localeCompare(b.month));
+}
+
+/**
+ * Calcula a economia baseada na energia exportada e preços
+ */
+function calculateSavings(imported: number, exported: number): number {
+  const pricePerKwhImport = 0.25; // Preço de compra
+  const pricePerKwhExport = 0.15; // Preço de venda
+  
+  const importCost = imported * pricePerKwhImport;
+  const exportRevenue = exported * pricePerKwhExport;
+  
+  return Math.round((exportRevenue - importCost) * 100) / 100;
 }
 
 /**

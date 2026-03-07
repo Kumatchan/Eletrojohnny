@@ -1,29 +1,110 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// Gera um ID único para o usuário (simples - em produção usar Auth)
+function getUserId(): string {
+  let userId = localStorage.getItem('solar_user_id');
+  if (!userId) {
+    userId = 'user_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('solar_user_id', userId);
+  }
+  return userId;
+}
+
 export default function ConfigurarPage() {
-  const [copied, setCopied] = useState(false);
-  const [forwardingEmail, setForwardingEmail] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [configured, setConfigured] = useState(false);
+  
+  // Form fields
+  const [email, setEmail] = useState('');
+  const [imapHost, setImapHost] = useState('');
+  const [imapPort, setImapPort] = useState('993');
+  const [imapUser, setImapUser] = useState('');
+  const [imapPassword, setImapPassword] = useState('');
+  const [energyCompanyEmail, setEnergyCompanyEmail] = useState('');
 
-  const apiUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/api/email-forward`
-    : '/api/email-forward';
+  useEffect(() => {
+    // Verifica se já existe configuração
+    checkConfiguration();
+  }, []);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(apiUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const checkConfiguration = async () => {
+    try {
+      const userId = getUserId();
+      const response = await fetch(`/api/imap?userId=${userId}`);
+      const data = await response.json();
+      
+      if (data.configured) {
+        setConfigured(true);
+        setEmail(data.email || '');
+        setImapHost(data.imapHost || '');
+        setImapPort(data.imapPort?.toString() || '993');
+        setImapUser(data.imapUser || '');
+        setEnergyCompanyEmail(data.energyCompanyEmail || '');
+      }
+    } catch (err) {
+      console.error('Erro ao verificar configuração:', err);
+    }
   };
 
-  const saveForwardingEmail = () => {
-    if (forwardingEmail) {
-      localStorage.setItem('forwardingEmail', forwardingEmail);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const userId = getUserId();
+      
+      const response = await fetch('/api/imap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          email,
+          imapHost,
+          imapPort: parseInt(imapPort),
+          imapUser,
+          imapPassword,
+          energyCompanyEmail
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message });
+        setConfigured(true);
+        
+        if (data.processed !== undefined && data.processed > 0) {
+          setMessage({ 
+            type: 'success', 
+            text: `${data.message} (${data.processed} registros novos)` 
+          });
+        }
+      } else {
+        setMessage({ type: 'error', text: data.error });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao conectar. Verifique as credenciais.' });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Common IMAP settings for major providers
+  const presetProviders = [
+    { name: 'Gmail', host: 'imap.gmail.com', port: '993' },
+    { name: 'Outlook', host: 'outlook.office365.com', port: '993' },
+    { name: 'Yahoo', host: 'imap.mail.yahoo.com', port: '993' },
+    { name: 'iCloud', host: 'imap.mail.me.com', port: '993' },
+  ];
+
+  const applyPreset = (host: string, port: string) => {
+    setImapHost(host);
+    setImapPort(port);
   };
 
   return (
@@ -41,7 +122,7 @@ export default function ConfigurarPage() {
               </Link>
             </div>
             <h1 className="text-xl font-bold text-slate-800 dark:text-white">
-              Configurar E-mail
+              {configured ? 'Conectar E-mail' : 'Configurar E-mail'}
             </h1>
             <div className="w-20"></div>
           </div>
@@ -54,184 +135,192 @@ export default function ConfigurarPage() {
           {/* Introdução */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              📧 Encaminhamento de E-mail
+              📧 Conexão IMAP
             </h2>
             <p className="text-slate-600 dark:text-slate-300 mb-4">
-              Configure o encaminhamento automático dos e-mails da sua compania de energia solar 
-              para receber os dados automaticamente no dashboard.
+              Conecte sua caixa de e-mail para que o sistema possa monitorar e extrair 
+              automaticamente os dados de energia dos e-mails da sua compania solar.
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Como funciona:</strong> Você configura seu provedor de e-mail para encaminhar 
-                automaticamente os e-mails da compania de energia para nosso sistema, que extrairá 
-                os dados automaticamente.
+                <strong>Como funciona:</strong> Você fornece as credenciais IMAP da sua caixa de e-mail. 
+                O sistema conectará automaticamente, buscará os e-mails da compania de energia 
+                e extrairá os dados para o dashboard.
               </p>
             </div>
           </div>
 
-          {/* Endpoint URL */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              🔗 Endereço do Webhook
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mb-4">
-              Use este endereço para configurar o encaminhamento:
-            </p>
-            
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={apiUrl}
-                readOnly
-                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg font-mono text-sm border-0"
-              />
-              <button
-                onClick={copyToClipboard}
-                className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-              >
-                {copied ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Copiado!
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Copiar
-                  </>
-                )}
-              </button>
+          {/* Mensagem de feedback */}
+          {message && (
+            <div className={`rounded-lg p-4 ${
+              message.type === 'success' 
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+            }`}>
+              {message.text}
             </div>
-          </div>
+          )}
 
-          {/* Instruções por provedor */}
+          {/* Formulário de configuração */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              📝 Instruções por Provedor
+              {configured ? '✏️ Atualizar Configuração' : '🔗 Credenciais IMAP'}
             </h3>
 
-            <div className="space-y-6">
-              {/* Gmail */}
-              <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
-                <h4 className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Gmail / Google Workspace
-                </h4>
-                <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1 ml-2">
-                  <li>Acesse <strong>Configurações</strong> (ícone de engrenagem)</li>
-                  <li>Va para <strong>Ver todas as configurações</strong></li>
-                  <li>Role até <strong>Encaminhamento e POP/IMAP</strong></li>
-                  <li>Clique em <strong>Adicionar um endereço de encaminhamento</strong></li>
-                  <li>Digite o endereço: <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">{apiUrl}</code></li>
-                  <li>Clique em <strong>Próxima</strong>, <strong>Continuar</strong> e <strong>Enviar</strong></li>
-                  <li>Copie o código de verificação enviado para seu e-mail e insira</li>
-                </ol>
-              </div>
-
-              {/* Outlook */}
-              <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
-                <h4 className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#0078D4" d="M24 7.387v10.478c0 .23-.08.424-.238.577l-7.143 6.89c-.152.146-.337.22-.553.22-.23 0-.424-.087-.578-.26l-2.853-2.86-4.4 4.4v-1.516l6.238-6.238c.087-.087.152-.184.195-.293.044-.11.066-.223.066-.34V7.387c0-.23-.088-.424-.264-.577L9.193 1.04c-.16-.145-.345-.217-.554-.217-.23 0-.424.087-.578.26L.856 8.29C.71 8.436.624 8.624.624 8.847v10.66c0 .368.13.68.39.94l7.357 7.357c.26.26.573.39.94.39h.39l7.357-7.357c.26-.26.39-.572.39-.94V8.847c0-.152-.044-.293-.13-.424l-6.193-6.193"/>
-                  </svg>
-                  Outlook / Office 365
-                </h4>
-                <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1 ml-2">
-                  <li>Acesse <strong>Configurações</strong> {'>'} <strong>Email</strong> {'>'} <strong>Regras</strong></li>
-                </ol>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 ml-2">
-                  No Outlook, use <strong>Regras de Mensagem</strong> para automaticamente 
-                  reencaminhar e-mails da compania de energia para o endereço acima.
+            {/* Presets de provedores */}
+            {!configured && (
+              <div className="mb-6">
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                  Selecione seu provedor:
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {presetProviders.map((provider) => (
+                    <button
+                      key={provider.name}
+                      onClick={() => applyPreset(provider.host, provider.port)}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      {provider.name}
+                    </button>
+                  ))}
+                </div>
               </div>
+            )}
 
-              {/* Yahoo */}
-              <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
-                <h4 className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#410093" d="M23.9 7.2c-.2-1.4-.9-2.7-2-3.6-.6-.5-1.4-.8-2.3-.9V1.4l-2.4 1.5c-.2-.1-.5-.2-.8-.2-1 0-1.9.5-2.4 1.3l-3.4-2.1-.5.9c-.6 1.1-.5 2.5.3 3.5.7.9 1.8 1.4 3 1.4.4 0 .8-.1 1.2-.2l.4 2.4c-.7.3-1.4.4-2.2.4-2.4 0-4.4-1.7-4.8-4l-2.7 1.6c.5 2.6 2.7 4.6 5.3 5 .7.1 1.4.1 2.1 0l.5 2.9c-.7.2-1.4.3-2.1.3-3.3 0-6-2.4-6.5-5.6l-2.6 1.6C.2 16.1 1 20 4.4 22.3l23.4-14.4c-.5-.7-.8-1.5-.9-2.4v-.3z"/>
-                  </svg>
-                  Yahoo Mail
-                </h4>
-                <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1 ml-2">
-                  <li>Acesse <strong>Configurações</strong> (ícone ⚙️)</li>
-                  <li>Va para <strong>Filters</strong> (Filtros)</li>
-                </ol>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 ml-2">
-                  Crie um filtro que envie automaticamente e-mails da compania de energia 
-                  para o endereço de encaminhamento.
-                </p>
-              </div>
-
-              {/* iCloud */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* E-mail principal */}
               <div>
-                <h4 className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#3693F3" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                    <path fill="#3693F3" d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/>
-                  </svg>
-                  iCloud Mail
-                </h4>
-                <ol className="list-decimal list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1 ml-2">
-                  <li>Acesse <strong>icloud.com/settings</strong></li>
-                  <li>Va para <strong>Regras</strong></li>
-                </ol>
-                <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 ml-2">
-                  Crie uma regra para automaticamente reencaminhar e-mails da compania de energia.
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Seu E-mail *
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Host IMAP */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Servidor IMAP (Host) *
+                </label>
+                <input
+                  type="text"
+                  value={imapHost}
+                  onChange={(e) => setImapHost(e.target.value)}
+                  placeholder="imap.gmail.com"
+                  required
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Porta IMAP */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Porta IMAP *
+                </label>
+                <input
+                  type="number"
+                  value={imapPort}
+                  onChange={(e) => setImapPort(e.target.value)}
+                  placeholder="993"
+                  required
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Usuário IMAP */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Usuário IMAP *
+                </label>
+                <input
+                  type="text"
+                  value={imapUser}
+                  onChange={(e) => setImapUser(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Senha IMAP */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Senha / App Password *
+                </label>
+                <input
+                  type="password"
+                  value={imapPassword}
+                  onChange={(e) => setImapPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required={!configured}
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Para Gmail, use uma &quot;Senha de App&quot;. Configure em Segurança &gt; Verificação em 2 etapas &gt; Senhas de App.
                 </p>
               </div>
-            </div>
-          </div>
 
-          {/* Salvar e-mail para filtro */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-              💾 Salvar E-mail da Compania
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mb-4">
-              Informe o e-mail da compania de energia para facilitar a configuração dos filtros:
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="email"
-                value={forwardingEmail}
-                onChange={(e) => setForwardingEmail(e.target.value)}
-                placeholder="exemplo: kp-net@kp-net.com"
-                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
-              />
+              {/* E-mail da compania de energia */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  E-mail da Compania de Energia
+                </label>
+                <input
+                  type="email"
+                  value={energyCompanyEmail}
+                  onChange={(e) => setEnergyCompanyEmail(e.target.value)}
+                  placeholder="kp-net@kp-net.com (opcional)"
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg border-0 focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  E-mail da compania que envia os dados de energia. Se vazio, todos os e-mails serão verificados.
+                </p>
+              </div>
+
+              {/* Botão de submit */}
               <button
-                onClick={saveForwardingEmail}
-                disabled={!forwardingEmail}
-                className="px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                type="submit"
+                disabled={loading}
+                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                {saved ? (
+                {loading ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Conectando...
+                  </>
+                ) : configured ? (
                   <>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Salvo!
+                    Atualizar e Sincronizar
                   </>
                 ) : (
-                  'Salvar'
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Conectar E-mail
+                  </>
                 )}
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Voltar ao Dashboard */}
           <div className="text-center">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
