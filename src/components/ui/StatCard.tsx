@@ -65,10 +65,10 @@ export function StatCard({ title, value, unit, icon, trend, previousValue, color
             <div className={`mt-2 text-sm font-medium ${
               trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
             }`}>
-              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value).toFixed(2)}%
               {previousValue !== undefined && (
                 <span className="text-slate-500 dark:text-slate-400 ml-1">
-                  (ontem: {previousValue.toFixed(1)} kWh)
+                  (ontem: {previousValue.toFixed(2)} kWh)
                 </span>
               )}
             </div>
