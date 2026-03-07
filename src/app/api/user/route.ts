@@ -26,11 +26,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Token inválido: missing access_token' }, { status: 400 });
     }
 
+    // Verifica se o token expirou
+    if (tokens.expiry_date) {
+      const expiryTime = new Date(tokens.expiry_date).getTime();
+      const now = Date.now();
+      if (expiryTime < now) {
+        console.error('Token expirado:', { expiry: expiryTime, now });
+        return NextResponse.json({ 
+          error: 'Token expirado', 
+          details: `O token expirou em ${new Date(tokens.expiry_date).toLocaleString()}`,
+          expired: true
+        }, { status: 400 });
+      }
+    }
+
     const auth = createAuthenticatedClient(tokens);
     const userInfo = await getUserInfo(auth);
 
     if (!userInfo) {
-      return NextResponse.json({ error: 'Não foi possível obter informações do usuário' }, { status: 400 });
+      return NextResponse.json({ error: 'Não foi possível obter informações do usuário', details: 'O token pode estar expirado ou ser inválido. Faça login novamente.' }, { status: 400 });
     }
 
     return NextResponse.json(userInfo);

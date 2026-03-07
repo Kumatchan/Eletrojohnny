@@ -172,12 +172,22 @@ export async function getUserInfo(auth: any): Promise<{ email: string; name?: st
   try {
     const oauth2 = google.oauth2({ version: 'v2', auth });
     const response = await oauth2.userinfo.get();
+    
+    if (!response.data.email) {
+      console.error('Email não encontrado na resposta:', response.data);
+      return null;
+    }
+    
     return {
-      email: response.data.email || '',
+      email: response.data.email,
       name: response.data.name || undefined,
     };
-  } catch (error) {
-    console.error('Erro ao obter info do usuário:', error);
+  } catch (error: any) {
+    console.error('Erro ao obter info do usuário:', error.message || error);
+    // Log more details for debugging
+    if (error.response?.data) {
+      console.error('Google API error response:', error.response.data);
+    }
     return null;
   }
 }
