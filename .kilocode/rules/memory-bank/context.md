@@ -6,6 +6,38 @@
 
 O aplicativo usa dados de demonstração por padrão. Para receber dados automaticamente, configure o encaminhamento de e-mail da sua compania de energia.
 
+## Opções de Integração de E-mail
+
+### O que você precisa: RECEBER/LER e-mails (não enviar)
+
+Para extrair dados da empresa de energia, precisamos de uma API que **lê** e-mails.
+
+| Opção | Custo | Status | 
+|-------|-------|--------|
+| **Encaminhamento de e-mail** | Gratuito | ✅ Implementado | 
+| **Nylas** | Freemium | 🔄 Disponível | 
+| **Gmail API (OAuth)** | Gratuito | ❌ Removido | 
+
+### Opções de API para RECEBER e-mails:
+
+1. **Encaminhamento de e-mail** (atual):
+   - Gratuito, qualquer provedor
+   - Requer configuração manual no provedor
+   - Já implementado ✅
+
+2. **Nylas** (sugestão do Gemini):
+   - API unificada para Gmail/Outlook
+   - plano gratuito existe (200 emails/month)
+   - Precisaria implementar OAuth
+
+3. **Gmail API**:
+   - Gratuito, mas precisa OAuth do usuário
+   - Removido (complexo para usuário)
+
+---
+
+**Nota:** As sugestões do Gemini (Resend, Brevo, SendGrid) são para **ENVIAR** e-mails, não para receber. São úteis para outras funcionalidades (notificações, newsletters) mas não resolvem nosso problema de extrair dados dos e-mails da empresa de energia.
+
 ## Recently Completed
 
 - [x] Base Next.js 16 setup with App Router
