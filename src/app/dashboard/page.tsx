@@ -250,6 +250,42 @@ function DashboardContent() {
   };
 
   const lastData = getLastData();
+
+  // Calculate yesterday's data for comparison
+  const getYesterdayData = () => {
+    if (!stats) return null;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    return stats.last30Days.find(d => d.date === yesterdayStr) || null;
+  };
+
+  const yesterdayData = getYesterdayData();
+
+  // Calculate trend comparing today vs yesterday
+  const calculateTrend = (today: number, yesterday: number) => {
+    if (yesterday === 0) return { value: today > 0 ? 100 : 0, isPositive: today > 0 };
+    const change = ((today - yesterday) / yesterday) * 100;
+    return { value: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  // Get today's values
+  const todayProduced = stats?.today?.produced ?? 0;
+  const todayConsumed = stats?.today?.consumed ?? 0;
+  const todayExported = stats?.today?.exported ?? 0;
+  const todayImported = stats?.today?.imported ?? 0;
+
+  // Get yesterday's values
+  const yesterdayProduced = yesterdayData?.produced ?? 0;
+  const yesterdayConsumed = yesterdayData?.consumed ?? 0;
+  const yesterdayExported = yesterdayData?.exported ?? 0;
+  const yesterdayImported = yesterdayData?.imported ?? 0;
+
+  // Calculate trends
+  const producedTrend = calculateTrend(todayProduced, yesterdayProduced);
+  const consumedTrend = calculateTrend(todayConsumed, yesterdayConsumed);
+  const exportedTrend = calculateTrend(todayExported, yesterdayExported);
+  const importedTrend = calculateTrend(todayImported, yesterdayImported);
   
   // Get the label for last data based on period type
   const getLastDataLabel = () => {
@@ -424,32 +460,39 @@ function DashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Produzido Hoje"
-            value={stats.today?.produced ?? 0}
+            value={todayProduced}
             unit="kWh"
             icon={<SunIcon />}
             color="green"
-            trend={{ value: 12, isPositive: true }}
+            trend={producedTrend}
+            previousValue={yesterdayProduced}
           />
           <StatCard
             title="Consumido Hoje"
-            value={stats.today?.consumed ?? 0}
+            value={todayConsumed}
             unit="kWh"
             icon={<LightningIcon />}
             color="blue"
+            trend={consumedTrend}
+            previousValue={yesterdayConsumed}
           />
           <StatCard
             title="Energia Vendida"
-            value={stats.today?.exported ?? 0}
+            value={todayExported}
             unit="kWh"
             icon={<ArrowUpIcon />}
             color="yellow"
+            trend={exportedTrend}
+            previousValue={yesterdayExported}
           />
           <StatCard
             title="Energia Comprada"
-            value={stats.today?.imported ?? 0}
+            value={todayImported}
             unit="kWh"
             icon={<ArrowDownIcon />}
             color="red"
+            trend={importedTrend}
+            previousValue={yesterdayImported}
           />
         </div>
 

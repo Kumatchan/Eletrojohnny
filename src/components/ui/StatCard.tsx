@@ -9,6 +9,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
+  previousValue?: number; // kWh from previous day
   color?: 'blue' | 'green' | 'yellow' | 'red' | 'purple';
 }
 
@@ -40,7 +41,7 @@ const colorClasses = {
   },
 };
 
-export function StatCard({ title, value, unit, icon, trend, color = 'blue' }: StatCardProps) {
+export function StatCard({ title, value, unit, icon, trend, previousValue, color = 'blue' }: StatCardProps) {
   const colors = colorClasses[color];
   
   return (
@@ -65,6 +66,11 @@ export function StatCard({ title, value, unit, icon, trend, color = 'blue' }: St
               trend.isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
             }`}>
               {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+              {previousValue !== undefined && (
+                <span className="text-slate-500 dark:text-slate-400 ml-1">
+                  (ontem: {previousValue.toFixed(1)} kWh)
+                </span>
+              )}
             </div>
           )}
         </div>
